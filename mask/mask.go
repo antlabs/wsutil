@@ -15,7 +15,7 @@ package mask
 
 import "unsafe"
 
-var mask func(payload []byte, key uint32)
+var Mask func(payload []byte, key uint32)
 
 func init() {
 	i := uint32(1)
@@ -23,9 +23,9 @@ func init() {
 
 	if b {
 		// 小端机器
-		mask = maskFast
+		Mask = maskFast
 	} else {
 		// 大端机器
-		mask = maskSlow
+		Mask = maskSlow
 	}
 }
