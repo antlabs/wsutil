@@ -21,7 +21,6 @@ import (
 
 	"github.com/antlabs/wsutil/fixedreader"
 	"github.com/antlabs/wsutil/opcode"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -32,12 +31,18 @@ var (
 func Test_Frame_Read_Size(t *testing.T) {
 	var out bytes.Buffer
 	err := writeMessage(&out, opcode.Text, nil, true)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var headArray [14]byte
 	outLen := out.Len()
-	_, size, err := readHeader(&out, &headArray)
-	assert.NoError(t, err)
-	assert.Equal(t, size, outLen)
+	_, size, err := ReadHeader(&out, &headArray)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if size != outLen {
+		t.Fatalf("size:%d, outLen:%d", size, outLen)
+	}
 	fmt.Printf("%d:%d\n", size, outLen)
 }
 
@@ -45,14 +50,23 @@ func Test_Frame_Read_NoMask(t *testing.T) {
 	r := bytes.NewReader(noMaskData)
 
 	var headArray [14]byte
-	h, _, err := readHeader(r, &headArray)
-	assert.NoError(t, err)
+	h, _, err := ReadHeader(r, &headArray)
+	if err != nil {
+		t.Fatal(err)
+	}
 	all, err := io.ReadAll(r)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// fmt.Printf("opcode:%d", h.opcode)
-	assert.Equal(t, string(all), "Hello")
-	assert.Equal(t, h.PayloadLen, int64(len("Hello")))
+	if string(all) != "Hello" {
+		t.Fatalf("payload:%s", string(all))
+	}
+
+	if h.PayloadLen != int64(len("Hello")) {
+		t.Fatalf("payloadLen:%d", h.PayloadLen)
+	}
 }
 
 func Test_Frame_Mask_Read_And_Write(t *testing.T) {
@@ -62,13 +76,22 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 	rr := fixedreader.NewFixedReader(r, &buf)
 	var headArray [14]byte
 	f, err := ReadFrame(rr, &headArray)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	assert.Equal(t, string(f.Payload[:f.PayloadLen]), "Hello")
+	if string(f.Payload[:f.PayloadLen]) != "Hello" {
+		t.Fatalf("payload:%s", string(f.Payload[:f.PayloadLen]))
+	}
 
 	var w bytes.Buffer
-	assert.NoError(t, WriteFrame(&w, f))
-	assert.Equal(t, w.Bytes(), haveMaskData)
+	if err := WriteFrame(&w, f); err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(w.Bytes(), haveMaskData) {
+		t.Fatalf("not equal")
+	}
 }
 
 func Test_Frame_Write_NoMask(t *testing.T) {
@@ -79,9 +102,16 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	h.PayloadLen = int64(5)
 	h.Opcode = 1
 	h.Fin = true
-	assert.NoError(t, writeHeader(&w, h))
-	_, err := w.WriteString("Hello")
+	if err := writeHeader(&w, h); err != nil {
+		t.Fatal(err)
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, w.Bytes(), noMaskData)
+	_, err := w.WriteString("Hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(w.Bytes(), noMaskData) {
+		t.Fatal("not equal")
+	}
 }

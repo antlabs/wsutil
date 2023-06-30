@@ -18,7 +18,6 @@ import (
 	"unsafe"
 
 	"github.com/antlabs/wsutil/enum"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Index(t *testing.T) {
@@ -28,21 +27,28 @@ func Test_Index(t *testing.T) {
 			i2 -= (enum.MaxFrameHeaderSize + 1)
 		}
 		index := selectIndex(i2)
-		assert.Equal(t, index, 0)
+		if index != 0 {
+			t.Fatal("index error")
+		}
+
 	}
 
 	for i := 1024 + enum.MaxFrameHeaderSize + 1; i <= 2*1024+enum.MaxFrameHeaderSize; i++ {
 		i2 := i
 		i2 -= (enum.MaxFrameHeaderSize + 1)
 		index := selectIndex(i2)
-		assert.Equal(t, index, 1)
+		if index != 1 {
+			t.Fatal("index error")
+		}
 	}
 
 	for i := 1024*2 + enum.MaxFrameHeaderSize + 1; i <= 3*1024+enum.MaxFrameHeaderSize; i++ {
 		i2 := i
 		i2 -= (enum.MaxFrameHeaderSize + 1)
 		index := selectIndex(i2)
-		assert.Equal(t, index, 2)
+		if index != 2 {
+			t.Fatal("index error")
+		}
 	}
 }
 

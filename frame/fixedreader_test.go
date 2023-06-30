@@ -10,7 +10,6 @@ import (
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
 	"github.com/antlabs/wsutil/opcode"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -40,17 +39,21 @@ func Test_Reader_Small(t *testing.T) {
 	// // 在每两个字符之间插入空格
 	// spacedHexString := strings.Join(splitString(hexString, 2), ", ")
 	// fmt.Printf("header: %+v\n", spacedHexString[:100])
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	r := fixedreader.NewFixedReader(&out, bytespool.GetBytes(1024+enum.MaxFrameHeaderSize))
 
 	var headArray [14]byte
 	f, err := ReadFrame(r, &headArray)
-	assert.NoError(t, err)
-	// err = os.WriteFile("./test_reader.dat", f.payload, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, f.Payload, testTextMessage64kb)
+	if !bytes.Equal(f.Payload, testTextMessage64kb) {
+		t.Fatalf("payload:%s", string(f.Payload))
+	}
 }
 
 func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
@@ -66,9 +69,13 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 
 		for j := 0; j < 1; j++ {
 			err := writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatal(err)
+			}
 			err = writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 		fmt.Printf("i = %d, need: len(%d), write.size:%d\n", i, len(need), out.Len())
 
@@ -78,9 +85,11 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 		for j := 0; j < 2; j++ {
 
 			f, err := ReadFrame(r, &headArray)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
 
-			assert.NoError(t, err)
 			// TODO
 			if j == 0 {
 				continue
@@ -114,23 +123,27 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 		}
 
 		err := writeMessage(&out, opcode.Text, need, true)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		b := bytespool.GetBytes(1024 + enum.MaxFrameHeaderSize)
 		r := fixedreader.NewFixedReader(&out, b)
 
 		f, err := ReadFrame(r, &headArray)
-		assert.NoError(t, err)
 		if err != nil {
-			return
+			t.Fatal(err)
 		}
 
-		assert.NoError(t, err)
 		// TODO
 		if i == 0 {
 			continue
 		}
-		assert.Equal(t, f.Payload, got, fmt.Sprintf("index:%d", i))
+		if !bytes.Equal(f.Payload, got) {
+			t.Fatalf("bad test index:%d\n", i)
+			return
+		}
+
 		bytespool.PutBytes(r.Ptr())
 		out.Reset()
 	}
@@ -145,7 +158,9 @@ func Test_Reset(t *testing.T) {
 
 	r.Read(small)
 	r.Reset(bytespool.GetBytes(1024*2 + enum.MaxFrameHeaderSize))
-	assert.Equal(t, r.Bytes()[:2], []byte("34"))
+	if !bytes.Equal(r.Bytes()[:2], []byte("34")) {
+		t.Fatal("bad")
+	}
 	// assert.Equal(t, r.free()[:2], []byte{0, 0})
 }
 
@@ -162,9 +177,15 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 
 		for j := 0; j < 1; j++ {
 			err := writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("bad test index:%d\n", i)
+				return
+			}
 			err = writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("bad test index:%d\n", i)
+				return
+			}
 		}
 		fmt.Printf("i = %d, need: len(%d), write.size:%d\n", i, len(need), out.Len())
 
@@ -174,9 +195,11 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 		for j := 0; j < 2; j++ {
 
 			f, err := ReadFrame(r, &headArray)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("bad test index:%d\n", i)
+				return
+			}
 
-			assert.NoError(t, err)
 			// TODO
 			if j == 0 {
 				continue
@@ -209,9 +232,15 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 
 		for j := 0; j < 1; j++ {
 			err := writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("bad test index:%d\n", i)
+				return
+			}
 			err = writeMessage(&out, opcode.Text, need, true)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("bad test index:%d\n", i)
+				return
+			}
 		}
 		fmt.Printf("i = %d, need: len(%d), write.size:%d\n", i, len(need), out.Len())
 
@@ -221,7 +250,10 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 
 			f, err := ReadFrame(r, &headArray)
 			if err != io.EOF {
-				assert.NoError(t, err)
+				if err != nil {
+					t.Fatalf("bad test index:%d\n", i)
+					return
+				}
 			}
 
 			if !bytes.Equal(f.Payload, got) {

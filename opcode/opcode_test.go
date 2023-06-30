@@ -16,14 +16,26 @@ package opcode
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Control(t *testing.T) {
-	assert.False(t, Text.isControl())
-	assert.False(t, Binary.isControl())
-	assert.True(t, Ping.isControl())
-	assert.True(t, Pong.isControl())
-	assert.True(t, Close.isControl())
+	if Text.IsControl() {
+		t.Fatal("Text is not control")
+	}
+
+	if Binary.IsControl() {
+		t.Fatal("Binary is not control")
+	}
+
+	if !Ping.IsControl() {
+		t.Fatal("Ping is control")
+	}
+
+	if !Pong.IsControl() {
+		t.Fatal("Pong is control")
+	}
+
+	if !Close.IsControl() {
+		t.Fatal("Close is control")
+	}
 }
