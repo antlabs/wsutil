@@ -30,6 +30,8 @@ type FixedReader struct {
 	rd   io.Reader // reader provided by the client
 	R, W int       // buf read and write positions
 	err  error
+	// CountMove int
+	// MoveBytes int
 }
 
 // newBuffer returns a new Buffer whose buffer has the specified size.
@@ -97,6 +99,8 @@ func (b *FixedReader) LeftMove() {
 	if b.R == 0 {
 		return
 	}
+	// b.CountMove++
+	// b.MoveBytes += b.W - b.R
 	copy(b.buf, b.buf[b.R:b.W])
 	b.W -= b.R
 	b.R = 0
@@ -147,14 +151,18 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 				return 0, b.readErr()
 			}
 			b.W += n1
-		}
-
-		if len(b.buf[b.R:b.W]) < len(p) {
 			continue
 		}
+
 		n1 = copy(p, b.buf[b.R:b.W])
 		b.R += n1
 
 		return n, nil
 	}
+}
+
+func (b *FixedReader) ResetReader(r io.Reader) {
+	b.rd = r
+	// b.R = 0
+	// b.W = 0
 }

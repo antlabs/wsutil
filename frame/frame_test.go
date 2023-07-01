@@ -17,8 +17,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"testing"
 
+	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
 	"github.com/antlabs/wsutil/opcode"
 )
@@ -69,6 +71,13 @@ func Test_Frame_Read_NoMask(t *testing.T) {
 	}
 }
 
+// func Test_Save_File(t *testing.T) {
+// 	dat := strings.Repeat("1", 1024*2)
+// 	var buf bytes.Buffer
+// 	writeMessage(&buf, opcode.Binary, []byte(dat), true)
+// 	os.WriteFile("./testdata/binary_2048.dat", buf.Bytes(), 0o644)
+// }
+
 func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 	r := bytes.NewReader(haveMaskData)
 
@@ -113,5 +122,45 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 
 	if !bytes.Equal(w.Bytes(), noMaskData) {
 		t.Fatal("not equal")
+	}
+}
+
+func Test_Frame(t *testing.T) {
+	// 阈值
+	threshold := 1.0
+
+	buf := make([]byte, int((1024+enum.MaxFrameHeaderSize)*threshold))
+
+	all, err := os.ReadFile("./testdata/binary.dat")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rb := bytes.NewReader(all)
+	r := fixedreader.NewFixedReader(rb, &buf)
+
+	headArray := [enum.MaxFrameHeaderSize]byte{}
+
+	defer func() {
+		// fmt.Printf("## move:%d\n", r.CountMove)
+	}()
+
+	for i := 0; i < 3; i++ {
+		f, err := ReadFrame(r, &headArray)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(f.Payload) == 0 {
+			fmt.Printf("%#v, r.r = %d, r.w  %d\n", f, r.R, r.W)
+			t.Fatal("payload is empty")
+		}
+
+		if len(f.Payload) != 1024 {
+			fmt.Printf("%#v, r.r = %d, r.w  %d\n", f, r.R, r.W)
+			t.Fatal("payload is not 1024")
+		}
+		rb.Reset(all)
+		r.ResetReader(rb)
 	}
 }
