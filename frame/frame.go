@@ -81,7 +81,7 @@ func ReadFrame2(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]
 		// 1.取得旧的buf
 		oldBuf := r.Ptr()
 		// 2.获取新的buf
-		newBuf := bytespool.GetBytes(int(float32(h.PayloadLen)*multipletimes) + enum.MaxFrameHeaderSize)
+		newBuf := bytespool.GetBytes(int(float32(h.PayloadLen+enum.MaxFrameHeaderSize) * multipletimes))
 		// 3.重置缓存区
 		r.Reset(newBuf)
 		// 4.将旧的buf放回池子里
