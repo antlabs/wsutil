@@ -50,6 +50,10 @@ type Frame struct {
 }
 
 func ReadFrame(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]byte) (f Frame, err error) {
+	return ReadFrame2(r, headArray, 1.0)
+}
+
+func ReadFrame2(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]byte, multipletimes float32 /*几倍的payload*/) (f Frame, err error) {
 	// 如果剩余可写缓存区放不下一个frame header, 就把数据往前移动
 	// 所有的的buf分配都是paydload + frame head 的长度, 挪完之后，肯定是能放下一个frame header的
 	if r.Len()-r.R < enum.MaxFrameHeaderSize {
@@ -77,7 +81,7 @@ func ReadFrame(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]b
 		// 1.取得旧的buf
 		oldBuf := r.Ptr()
 		// 2.获取新的buf
-		newBuf := bytespool.GetBytes(int(h.PayloadLen) + enum.MaxFrameHeaderSize)
+		newBuf := bytespool.GetBytes(int(float32(h.PayloadLen)*multipletimes) + enum.MaxFrameHeaderSize)
 		// 3.重置缓存区
 		r.Reset(newBuf)
 		// 4.将旧的buf放回池子里

@@ -23,7 +23,7 @@ import (
 var errNegativeRead = errors.New("fixedreader: reader returned negative count from Read")
 
 // 固定大小的FixedReader, 所有的内存都是提前分配好的
-// 标准库的bufio.Reader不能传递一个固定大小的buf, 导致控制力度会差点
+// 标准库的bufio.Reader不能自定义buf传过去, 导致控制力度会差点
 type FixedReader struct {
 	buf  []byte
 	p    *[]byte
