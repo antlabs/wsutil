@@ -53,3 +53,11 @@ func ClearWriter(w *bufio.Writer) {
 	w2.buf = nil
 	w2.wr = nil
 }
+
+//go:nosplit
+func ClearReadWriter(rw *bufio.ReadWriter) {
+	ClearReader(rw.Reader)
+	ClearWriter(rw.Writer)
+	rw.Reader = nil
+	rw.Writer = nil
+}
