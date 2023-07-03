@@ -131,7 +131,7 @@ func Test_Frame(t *testing.T) {
 
 	buf := make([]byte, int((1024+enum.MaxFrameHeaderSize)*threshold))
 
-	all, err := os.ReadFile("./testdata/binary.dat")
+	all, err := os.ReadFile("./testdata/binary_1024.dat")
 	if err != nil {
 		t.Fatal(err)
 	}
