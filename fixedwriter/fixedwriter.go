@@ -13,6 +13,11 @@ func NewFixedWriter(buf []byte) *FixedWriter {
 	}
 }
 
+func (fw *FixedWriter) Reset(buf []byte) {
+	fw.buf = buf
+	fw.w = 0
+}
+
 func (fw *FixedWriter) Write(p []byte) (n int, err error) {
 	if len(fw.buf[fw.w:]) < len(p) {
 		panic(fmt.Sprintf("fixedWriter: buf is too small: %d:%d < %d", len(fw.buf[fw.w:]), cap(fw.buf), cap(p)))

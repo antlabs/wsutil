@@ -184,8 +184,9 @@ func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool)
 func WriteFrame(w io.Writer, f Frame) (err error) {
 	buf := bytespool.GetBytes(len(f.Payload) + enum.MaxFrameHeaderSize)
 
-	tmpWriter := fixedwriter.NewFixedWriter(*buf)
-	var ws io.Writer = tmpWriter
+	var tmpWriter fixedwriter.FixedWriter
+	tmpWriter.Reset(*buf)
+	var ws io.Writer = &tmpWriter
 
 	defer func() {
 		tmpWriter.Free()
