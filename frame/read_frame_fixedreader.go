@@ -40,7 +40,7 @@ func ReadFrame2(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]
 	// 情况 1，需要读的长度 > 剩余可用空间(未写的+已经被读取走的)
 	if h.PayloadLen-readUnhandle > r.Available() {
 		// 1.取得旧的buf
-		oldBuf := r.Ptr()
+		oldBuf := r.BufPtr()
 		// 2.获取新的buf
 		newBuf := bytespool.GetBytes(int(float32(h.PayloadLen+enum.MaxFrameHeaderSize) * multipletimes))
 		// 3.重置缓存区

@@ -16,8 +16,6 @@ package fixedreader
 import (
 	"errors"
 	"io"
-
-	"github.com/antlabs/wsutil/bytespool"
 )
 
 var errNegativeRead = errors.New("fixedreader: reader returned negative count from Read")
@@ -25,31 +23,38 @@ var errNegativeRead = errors.New("fixedreader: reader returned negative count fr
 // 固定大小的FixedReader, 所有的内存都是提前分配好的
 // 标准库的bufio.Reader不能自定义buf传过去, 导致控制力度会差点
 type FixedReader struct {
-	buf  []byte
-	p    *[]byte
-	rd   io.Reader // reader provided by the client
-	R, W int       // buf read and write positions
-	err  error
-	bp   *bytespool.BytesPool
+	buf    []byte
+	bufPtr *[]byte
+	rd     io.Reader // reader provided by the client
+	R, W   int       // buf read and write positions
+	err    error
 	// CountMove int
 	// MoveBytes int
+	isInit bool
+}
+
+func (b *FixedReader) Init(r io.Reader, buf *[]byte) {
+	b.rd = r
+	b.buf = *buf
+	b.bufPtr = buf
+	b.isInit = true
+}
+
+func (b *FixedReader) IsInit() bool {
+	return b.isInit
 }
 
 // newBuffer returns a new Buffer whose buffer has the specified size.
-func NewFixedReader(r io.Reader, buf *[]byte, bp *bytespool.BytesPool) *FixedReader {
-	return &FixedReader{
-		rd:  r,
-		buf: *buf,
-		p:   buf,
-		bp:  bp,
-	}
+func NewFixedReader(r io.Reader, buf *[]byte) *FixedReader {
+	fr := &FixedReader{}
+	fr.Init(r, buf)
+	return fr
 }
 
 func (b *FixedReader) Release() error {
-	if b.p != nil {
-		b.bp.PutBytes(b.p)
+	if b.bufPtr != nil {
 		b.buf = nil
-		b.p = nil
+		b.bufPtr = nil
 	}
 	return nil
 }
@@ -69,7 +74,7 @@ func (b *FixedReader) Reset(buf *[]byte) {
 	copy(*buf, b.buf[b.R:b.W])
 	b.W -= b.R
 	b.R = 0
-	b.p = buf
+	b.bufPtr = buf
 	b.buf = *buf
 }
 
@@ -78,8 +83,8 @@ func (b *FixedReader) Len() int {
 	return len(b.buf)
 }
 
-func (b *FixedReader) Ptr() *[]byte {
-	return b.p
+func (b *FixedReader) BufPtr() *[]byte {
+	return b.bufPtr
 }
 
 func (b *FixedReader) Bytes() []byte {

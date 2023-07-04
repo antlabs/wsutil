@@ -43,8 +43,7 @@ func Test_Reader_Small(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bp := bytespool.New()
-	r := fixedreader.NewFixedReader(&out, bytespool.GetBytes(1024+enum.MaxFrameHeaderSize), bp)
+	r := fixedreader.NewFixedReader(&out, bytespool.GetBytes(1024+enum.MaxFrameHeaderSize))
 
 	var headArray [14]byte
 	f, err := ReadFrame(r, &headArray)
@@ -82,8 +81,7 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 
 		b := bytespool.GetBytes(1024 + enum.MaxFrameHeaderSize)
 
-		bp := bytespool.New()
-		r := fixedreader.NewFixedReader(&out, b, bp)
+		r := fixedreader.NewFixedReader(&out, b)
 		var headArray [14]byte
 		for j := 0; j < 2; j++ {
 
@@ -106,7 +104,7 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 				return
 			}
 		}
-		bytespool.PutBytes(r.Ptr())
+		bytespool.PutBytes(r.BufPtr())
 		out.Reset()
 	}
 }
@@ -131,8 +129,7 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 		}
 
 		b := bytespool.GetBytes(1024 + enum.MaxFrameHeaderSize)
-		bp := bytespool.New()
-		r := fixedreader.NewFixedReader(&out, b, bp)
+		r := fixedreader.NewFixedReader(&out, b)
 
 		f, err := ReadFrame(r, &headArray)
 		if err != nil {
@@ -148,7 +145,7 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 			return
 		}
 
-		bytespool.PutBytes(r.Ptr())
+		bytespool.PutBytes(r.BufPtr())
 		out.Reset()
 	}
 }
@@ -157,8 +154,7 @@ func Test_Reset(t *testing.T) {
 	var out bytes.Buffer
 	out.Write([]byte("1234"))
 
-	bp := bytespool.New()
-	r := fixedreader.NewFixedReader(&out, bytespool.GetBytes(1024+enum.MaxFrameHeaderSize), bp)
+	r := fixedreader.NewFixedReader(&out, bytespool.GetBytes(1024+enum.MaxFrameHeaderSize))
 
 	small := make([]byte, 2)
 
@@ -196,8 +192,7 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 		fmt.Printf("i = %d, need: len(%d), write.size:%d\n", i, len(need), out.Len())
 
 		b := bytespool.GetBytes(1024 + enum.MaxFrameHeaderSize)
-		bp := bytespool.New()
-		r := fixedreader.NewFixedReader(&out, b, bp)
+		r := fixedreader.NewFixedReader(&out, b)
 		var headArray [14]byte
 		for j := 0; j < 2; j++ {
 
@@ -220,7 +215,7 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 				return
 			}
 		}
-		bytespool.PutBytes(r.Ptr())
+		bytespool.PutBytes(r.BufPtr())
 		out.Reset()
 	}
 }
@@ -252,8 +247,7 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 		fmt.Printf("i = %d, need: len(%d), write.size:%d\n", i, len(need), out.Len())
 
 		b := bytespool.GetBytes(1024 + enum.MaxFrameHeaderSize)
-		bp := bytespool.New()
-		r := fixedreader.NewFixedReader(&out, b, bp)
+		r := fixedreader.NewFixedReader(&out, b)
 		for j := 0; j < 2; j++ {
 
 			f, err := ReadFrame(r, &headArray)
@@ -273,7 +267,7 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 				return
 			}
 		}
-		bytespool.PutBytes(r.Ptr())
+		bytespool.PutBytes(r.BufPtr())
 		out.Reset()
 	}
 }

@@ -16,10 +16,20 @@
 
 package bytespool
 
-type BytesPool struct{}
+type BytesPool struct {
+	isSet bool
+}
 
 func New() *BytesPool {
 	return &BytesPool{}
+}
+
+func (p *BytesPool) IsInit() bool {
+	return p.isSet
+}
+
+func (p *BytesPool) Init() {
+	p.isSet = true
 }
 
 func (p *BytesPool) GetBytes(n int) (rv *[]byte) {

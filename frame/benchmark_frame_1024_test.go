@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/antlabs/wsutil/bytespool"
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
 )
@@ -26,8 +25,7 @@ func Benchmark_ReadFrame_1024(b *testing.B) {
 	}
 
 	rb := bytes.NewReader(all)
-	bp := bytespool.New()
-	r := fixedreader.NewFixedReader(rb, &buf, bp)
+	r := fixedreader.NewFixedReader(rb, &buf)
 
 	headArray := [enum.MaxFrameHeaderSize]byte{}
 

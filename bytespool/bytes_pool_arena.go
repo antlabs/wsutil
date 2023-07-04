@@ -21,13 +21,18 @@ import (
 )
 
 type BytesPool struct {
-	mem *arena.Arena
+	mem   *arena.Arena
+	isSet bool
 }
 
 func New() *BytesPool {
 	return &BytesPool{
 		mem: arena.NewArena(),
 	}
+}
+
+func (p *BytesPool) Init() {
+	p.isSet = true
 }
 
 func (p *BytesPool) GetBytes(n int) (rv *[]byte) {
