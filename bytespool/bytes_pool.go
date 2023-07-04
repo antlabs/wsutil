@@ -1,3 +1,5 @@
+package bytespool
+
 // Copyright 2021-2023 antlabs. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,32 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bytespool
-
 import (
 	"sync"
 
 	"github.com/antlabs/wsutil/enum"
 )
-
-const (
-	page     = 1024
-	maxIndex = 64
-)
-
-func selectIndex(n int) int {
-	index := n / page
-	return index
-}
-
-var pools = make([]sync.Pool, 0, maxIndex)
-
-var upgradeRespPool = sync.Pool{
-	New: func() interface{} {
-		buf := make([]byte, 256)
-		return &buf
-	},
-}
 
 func init() {
 	for i := 1; i <= maxIndex; i++ {
@@ -50,6 +31,25 @@ func init() {
 		})
 	}
 }
+
+const (
+	page     = 1024
+	maxIndex = 64
+)
+
+var upgradeRespPool = sync.Pool{
+	New: func() interface{} {
+		buf := make([]byte, 256)
+		return &buf
+	},
+}
+
+func selectIndex(n int) int {
+	index := n / page
+	return index
+}
+
+var pools = make([]sync.Pool, 0, maxIndex)
 
 func GetBytes(n int) (rv *[]byte) {
 	if n <= enum.MaxFrameHeaderSize {

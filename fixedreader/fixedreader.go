@@ -30,22 +30,24 @@ type FixedReader struct {
 	rd   io.Reader // reader provided by the client
 	R, W int       // buf read and write positions
 	err  error
+	bp   *bytespool.BytesPool
 	// CountMove int
 	// MoveBytes int
 }
 
 // newBuffer returns a new Buffer whose buffer has the specified size.
-func NewFixedReader(r io.Reader, buf *[]byte) *FixedReader {
+func NewFixedReader(r io.Reader, buf *[]byte, bp *bytespool.BytesPool) *FixedReader {
 	return &FixedReader{
 		rd:  r,
 		buf: *buf,
 		p:   buf,
+		bp:  bp,
 	}
 }
 
 func (b *FixedReader) Release() error {
 	if b.p != nil {
-		bytespool.PutBytes(b.p)
+		b.bp.PutBytes(b.p)
 		b.buf = nil
 		b.p = nil
 	}

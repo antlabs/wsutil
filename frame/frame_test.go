@@ -20,6 +20,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/antlabs/wsutil/bytespool"
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
 	"github.com/antlabs/wsutil/opcode"
@@ -82,7 +83,8 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 	r := bytes.NewReader(haveMaskData)
 
 	buf := make([]byte, 512)
-	rr := fixedreader.NewFixedReader(r, &buf)
+	bp := bytespool.New()
+	rr := fixedreader.NewFixedReader(r, &buf, bp)
 	var headArray [14]byte
 	f, err := ReadFrame(rr, &headArray)
 	if err != nil {
@@ -137,7 +139,8 @@ func Test_Frame(t *testing.T) {
 	}
 
 	rb := bytes.NewReader(all)
-	r := fixedreader.NewFixedReader(rb, &buf)
+	bp := bytespool.New()
+	r := fixedreader.NewFixedReader(rb, &buf, bp)
 
 	headArray := [enum.MaxFrameHeaderSize]byte{}
 
