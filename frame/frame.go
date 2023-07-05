@@ -184,29 +184,28 @@ func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool)
 func WriteFrame(w io.Writer, f Frame) (err error) {
 	buf := bytespool.GetBytes(len(f.Payload) + enum.MaxFrameHeaderSize)
 
-	var tmpWriter fixedwriter.FixedWriter
-	tmpWriter.Reset(*buf)
-	var ws io.Writer = &tmpWriter
+	var ws fixedwriter.FixedWriter
+	ws.Reset(*buf)
 
 	defer func() {
-		tmpWriter.Free()
+		ws.Free()
 		bytespool.PutBytes(buf)
 	}()
-	if err = writeHeader(ws, f.FrameHeader); err != nil {
+	if err = writeHeader(&ws, f.FrameHeader); err != nil {
 		return
 	}
 
-	wIndex := tmpWriter.Len()
+	wIndex := ws.Len()
 	_, err = ws.Write(f.Payload)
 	if err != nil {
 		return
 	}
 	if f.Mask {
 		key := binary.LittleEndian.Uint32(f.MaskValue[:])
-		mask.Mask(tmpWriter.Bytes()[wIndex:], key)
+		mask.Mask(ws.Bytes()[wIndex:], key)
 	}
 
 	// fmt.Printf("writeFrame %#v\n", tmpWriter.Bytes())
-	_, err = w.Write(tmpWriter.Bytes())
+	_, err = w.Write(ws.Bytes())
 	return err
 }
