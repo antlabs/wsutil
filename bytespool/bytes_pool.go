@@ -37,6 +37,7 @@ const (
 	maxIndex = 64
 )
 
+var pools = make([]sync.Pool, 0, maxIndex)
 var upgradeRespPool = sync.Pool{
 	New: func() interface{} {
 		buf := make([]byte, 256)
@@ -48,8 +49,6 @@ func selectIndex(n int) int {
 	index := n / page
 	return index
 }
-
-var pools = make([]sync.Pool, 0, maxIndex)
 
 func GetBytes(n int) (rv *[]byte) {
 	if n <= enum.MaxFrameHeaderSize {
