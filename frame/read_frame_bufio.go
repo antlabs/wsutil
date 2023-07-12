@@ -8,7 +8,7 @@ import (
 	"github.com/antlabs/wsutil/mask"
 )
 
-func ReadFromReader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame, err error) {
+func ReadFrameFromReader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame, err error) {
 	h, _, err := ReadHeader(r, headArray)
 	if err != nil {
 		return f, err

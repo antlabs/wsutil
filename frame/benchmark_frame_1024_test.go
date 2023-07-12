@@ -70,7 +70,7 @@ func Benchmark_ReadFromReader_1024(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		f, err := ReadFromReader(r, &headArray, &buf)
+		f, err := ReadFrameFromReader(r, &headArray, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}

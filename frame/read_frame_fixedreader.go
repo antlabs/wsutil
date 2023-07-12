@@ -11,10 +11,10 @@ import (
 )
 
 func ReadFrame(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]byte) (f Frame, err error) {
-	return ReadFrame2(r, headArray, 1.0)
+	return ReadFrameFromWindows(r, headArray, 1.0)
 }
 
-func ReadFrame2(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]byte, multipletimes float32 /*几倍的payload*/) (f Frame, err error) {
+func ReadFrameFromWindows(r *fixedreader.FixedReader, headArray *[enum.MaxFrameHeaderSize]byte, multipletimes float32 /*几倍的payload*/) (f Frame, err error) {
 	// 如果剩余可写缓存区放不下一个frame header, 就把数据往前移动
 	// 所有的的buf分配都是paydload + frame head 的长度, 挪完之后，肯定是能放下一个frame header的
 	if r.Len()-r.R < enum.MaxFrameHeaderSize {
