@@ -22,6 +22,7 @@ import (
 
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
+	"github.com/antlabs/wsutil/fixedwriter"
 	"github.com/antlabs/wsutil/opcode"
 )
 
@@ -32,7 +33,8 @@ var (
 
 func Test_Frame_Read_Size(t *testing.T) {
 	var out bytes.Buffer
-	err := writeMessage(&out, opcode.Text, nil, true)
+	var fw fixedwriter.FixedWriter
+	err := writeMessage(&out, opcode.Text, nil, true, &fw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +96,8 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 	}
 
 	var w bytes.Buffer
-	if err := WriteFrame(&w, f); err != nil {
+	var fw fixedwriter.FixedWriter
+	if err := WriteFrame(&w, f, &fw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,7 +114,9 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	h.PayloadLen = int64(5)
 	h.Opcode = 1
 	h.Fin = true
-	if err := writeHeader(&w, h); err != nil {
+
+	var head [14]byte
+	if _, err := writeHeader(head[:], h); err != nil {
 		t.Fatal(err)
 	}
 

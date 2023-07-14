@@ -96,3 +96,18 @@ func Benchmark_Mask_Fast_4096(t *testing.B) {
 		maskFast(payload[:], key)
 	}
 }
+
+// func Benchmark_Mask_Big_4096(t *testing.B) {
+// 	var payload [4096]byte
+// 	var maskValue [4]byte
+
+// 	for i := 0; i < len(payload); i++ {
+// 		payload[i] = byte(i)
+// 	}
+// 	newMask(maskValue[:])
+// 	key := binary.LittleEndian.Uint32(maskValue[:])
+// 	t.ResetTimer()
+// 	for i := 0; i < t.N; i++ {
+// 		maskBig(payload[:], key)
+// 	}
+// }

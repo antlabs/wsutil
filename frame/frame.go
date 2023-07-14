@@ -120,8 +120,22 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 
 // https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
 // (the most significant bit MUST be 0)
-func writeHeader(w io.Writer, h FrameHeader) (err error) {
-	var head [enum.MaxFrameHeaderSize]byte
+func writeHeader(head []byte, h FrameHeader) (have int, err error) {
+	// var head [enum.MaxFrameHeaderSize]byte
+	head[0] = 0
+	head[1] = 0
+	head[2] = 0
+	head[3] = 0
+	head[4] = 0
+	head[5] = 0
+	head[6] = 0
+	head[7] = 0
+	head[8] = 0
+	head[9] = 0
+	head[10] = 0
+	head[11] = 0
+	head[12] = 0
+	head[13] = 0
 
 	if h.Fin {
 		head[0] |= 1 << 7
@@ -141,7 +155,7 @@ func writeHeader(w io.Writer, h FrameHeader) (err error) {
 
 	head[0] |= byte(h.Opcode & 0xF)
 
-	have := 2
+	have = 2
 	switch {
 	case h.PayloadLen <= 125:
 		head[1] = byte(h.PayloadLen)
@@ -160,11 +174,10 @@ func writeHeader(w io.Writer, h FrameHeader) (err error) {
 		have += copy(head[have:], h.MaskValue[:])
 	}
 
-	_, err = w.Write(head[:have])
-	return err
+	return have, err
 }
 
-func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool) (err error) {
+func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool, ws *fixedwriter.FixedWriter) (err error) {
 	var f Frame
 	f.Fin = true
 	f.Opcode = op
@@ -178,34 +191,34 @@ func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool)
 		newMask(f.MaskValue[:])
 	}
 
-	return WriteFrame(w, f)
+	return WriteFrame(w, f, ws)
 }
 
-func WriteFrame(w io.Writer, f Frame) (err error) {
+func WriteFrame(w io.Writer, f Frame, ws *fixedwriter.FixedWriter) (err error) {
 	buf := bytespool.GetBytes(len(f.Payload) + enum.MaxFrameHeaderSize)
 
-	var ws fixedwriter.FixedWriter
+	// var ws fixedwriter.FixedWriter
+	var wIndex int
 	ws.Reset(*buf)
 
-	defer func() {
-		ws.Free()
-		bytespool.PutBytes(buf)
-	}()
-	if err = writeHeader(&ws, f.FrameHeader); err != nil {
-		return
+	if wIndex, err = writeHeader(*buf, f.FrameHeader); err != nil {
+		goto free
 	}
 
-	wIndex := ws.Len()
+	ws.SetW(wIndex)
 	_, err = ws.Write(f.Payload)
 	if err != nil {
-		return
+		goto free
 	}
 	if f.Mask {
 		key := binary.LittleEndian.Uint32(f.MaskValue[:])
 		mask.Mask(ws.Bytes()[wIndex:], key)
 	}
 
-	// fmt.Printf("writeFrame %#v\n", tmpWriter.Bytes())
 	_, err = w.Write(ws.Bytes())
-	return err
+
+free:
+	ws.Free()
+	bytespool.PutBytes(buf)
+	return
 }

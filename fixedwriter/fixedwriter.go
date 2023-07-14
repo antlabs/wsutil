@@ -13,6 +13,10 @@ func NewFixedWriter(buf []byte) *FixedWriter {
 	}
 }
 
+func (fw *FixedWriter) SetW(w int) {
+	fw.w = w
+}
+
 func (fw *FixedWriter) Reset(buf []byte) {
 	fw.buf = buf
 	fw.w = 0
@@ -38,4 +42,5 @@ func (fw *FixedWriter) Bytes() []byte {
 // 释放
 func (fw *FixedWriter) Free() {
 	fw.buf = nil
+	fw.w = 0
 }

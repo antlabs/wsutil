@@ -9,6 +9,7 @@ import (
 	"github.com/antlabs/wsutil/bytespool"
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
+	"github.com/antlabs/wsutil/fixedwriter"
 	"github.com/antlabs/wsutil/opcode"
 )
 
@@ -34,7 +35,9 @@ func Test_Reader_Small(t *testing.T) {
 	var out bytes.Buffer
 
 	tmp := append([]byte(nil), testTextMessage64kb...)
-	err := writeMessage(&out, opcode.Text, tmp, true)
+	var fw fixedwriter.FixedWriter
+	err := writeMessage(&out, opcode.Text, tmp, true, &fw)
+	// err := writeMessage(&out, opcode.Text, tmp, true, &head, &fw)
 	// hexString := hex.EncodeToString(out.Bytes())
 	// // 在每两个字符之间插入空格
 	// spacedHexString := strings.Join(splitString(hexString, 2), ", ")
@@ -59,6 +62,8 @@ func Test_Reader_Small(t *testing.T) {
 func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 	var out bytes.Buffer
 
+	// var head [14]byte
+	var fw fixedwriter.FixedWriter
 	for i := 1024 * 63; i <= 1024*63+1; i++ {
 		need := make([]byte, 0, i)
 		got := make([]byte, 0, i)
@@ -68,11 +73,12 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true)
+			err := writeMessage(&out, opcode.Text, need, true, &fw)
+			// err := writeMessage(&out, opcode.Text, need, true, &head, &fw)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = writeMessage(&out, opcode.Text, need, true)
+			err = writeMessage(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -114,6 +120,7 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 	var out bytes.Buffer
 
 	var headArray [14]byte
+	var fw fixedwriter.FixedWriter
 	for i := 1031; i <= 1024*64; i++ {
 		// for i := 2046; i <= 2048; i++ {
 		need := make([]byte, 0, i)
@@ -123,7 +130,7 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 			got = append(got, byte(j))
 		}
 
-		err := writeMessage(&out, opcode.Text, need, true)
+		err := writeMessage(&out, opcode.Text, need, true, &fw)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,6 +176,7 @@ func Test_Reset(t *testing.T) {
 func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 	var out bytes.Buffer
 
+	var fw fixedwriter.FixedWriter
 	for i := 64512; i <= 64512; i++ {
 		need := make([]byte, 0, i)
 		got := make([]byte, 0, i)
@@ -178,12 +186,12 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true)
+			err := writeMessage(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
 			}
-			err = writeMessage(&out, opcode.Text, need, true)
+			err = writeMessage(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
@@ -224,6 +232,8 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 	var out bytes.Buffer
 
 	var headArray [14]byte
+	// var writeHeader [14]byte
+	var fw fixedwriter.FixedWriter
 	for i := 65536; i <= 64512; i++ {
 		need := make([]byte, 0, i)
 		got := make([]byte, 0, i)
@@ -233,12 +243,12 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true)
+			err := writeMessage(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
 			}
-			err = writeMessage(&out, opcode.Text, need, true)
+			err = writeMessage(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
