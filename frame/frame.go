@@ -120,6 +120,66 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 
 // https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
 // (the most significant bit MUST be 0)
+func writeHeader2(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcode, payloadLen int, mask bool, maskValue uint32) (have int, err error) {
+	head[0] = 0
+	head[1] = 0
+	head[2] = 0
+	head[3] = 0
+	head[4] = 0
+	head[5] = 0
+	head[6] = 0
+	head[7] = 0
+	head[8] = 0
+	head[9] = 0
+	head[10] = 0
+	head[11] = 0
+	head[12] = 0
+	head[13] = 0
+
+	if fin {
+		head[0] |= 1 << 7
+	}
+
+	if rsv1 {
+		head[0] |= 1 << 6
+	}
+
+	if rsv2 {
+		head[0] |= 1 << 5
+	}
+
+	if rsv3 {
+		head[0] |= 1 << 5
+	}
+
+	head[0] |= byte(code & 0xF)
+
+	have = 2
+	switch {
+	case payloadLen <= 125:
+		head[1] = byte(payloadLen)
+	case payloadLen <= math.MaxUint16:
+		head[1] = 126
+		binary.BigEndian.PutUint16(head[2:], uint16(payloadLen))
+		have += 2 // 2前
+	default:
+		head[1] = 127
+		binary.BigEndian.PutUint64(head[2:], uint64(payloadLen))
+		have += 8
+	}
+
+	if mask {
+		head[1] |= 1 << 7
+		// have += copy(head[have:], maskValue[:])
+		binary.LittleEndian.PutUint32(head[have:], maskValue)
+		have += 4
+	}
+
+	return have, err
+}
+
+// https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
+// (the most significant bit MUST be 0)
 func writeHeader(head []byte, h FrameHeader) (have int, err error) {
 	// var head [enum.MaxFrameHeaderSize]byte
 	head[0] = 0
@@ -181,32 +241,54 @@ func writeMessage(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient bool,
 	var f Frame
 	f.Fin = true
 	f.Opcode = op
-	f.Payload = writeBuf
 	f.PayloadLen = int64(len(writeBuf))
-	defer func() {
-		f.Payload = nil
-	}()
 	if isClient {
 		f.Mask = true
 		newMask(f.MaskValue[:])
 	}
 
-	return WriteFrame(w, f, ws)
+	return WriteFrame(w, f.FrameHeader, writeBuf, ws)
 }
 
-func WriteFrame(w io.Writer, f Frame, ws *fixedwriter.FixedWriter) (err error) {
-	buf := bytespool.GetBytes(len(f.Payload) + enum.MaxFrameHeaderSize)
+func WriteFrame2(ws *fixedwriter.FixedWriter, w io.Writer, payload []byte, rsv1 bool, isClient bool, code opcode.Opcode, maskValue uint32) (err error) {
+	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 
-	// var ws fixedwriter.FixedWriter
 	var wIndex int
 	ws.Reset(*buf)
 
-	if wIndex, err = writeHeader(*buf, f.FrameHeader); err != nil {
+	if wIndex, err = writeHeader2(*buf, true, rsv1, false, false, code, len(payload), isClient, maskValue); err != nil {
 		goto free
 	}
 
 	ws.SetW(wIndex)
-	_, err = ws.Write(f.Payload)
+	_, err = ws.Write(payload)
+	if err != nil {
+		goto free
+	}
+	if isClient {
+		mask.Mask(ws.Bytes()[wIndex:], maskValue)
+	}
+
+	_, err = w.Write(ws.Bytes())
+
+free:
+	ws.Free()
+	bytespool.PutBytes(buf)
+	return
+}
+
+func WriteFrame(w io.Writer, f FrameHeader, payload []byte, ws *fixedwriter.FixedWriter) (err error) {
+	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
+
+	var wIndex int
+	ws.Reset(*buf)
+
+	if wIndex, err = writeHeader(*buf, f); err != nil {
+		goto free
+	}
+
+	ws.SetW(wIndex)
+	_, err = ws.Write(payload)
 	if err != nil {
 		goto free
 	}

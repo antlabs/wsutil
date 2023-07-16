@@ -97,7 +97,7 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 
 	var w bytes.Buffer
 	var fw fixedwriter.FixedWriter
-	if err := WriteFrame(&w, f, &fw); err != nil {
+	if err := WriteFrame(&w, f.FrameHeader, f.Payload, &fw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,17 +116,20 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	h.Fin = true
 
 	var head [14]byte
-	if _, err := writeHeader(head[:], h); err != nil {
+	var have int
+	var err error
+	if have, err = writeHeader(head[:], h); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := w.WriteString("Hello")
+	w.Write(head[:have])
+	_, err = w.WriteString("Hello")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !bytes.Equal(w.Bytes(), noMaskData) {
-		t.Fatal("not equal")
+		t.Fatalf("not equal:%v, %v\n", w.Bytes(), noMaskData)
 	}
 }
 
