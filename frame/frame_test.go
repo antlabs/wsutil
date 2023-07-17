@@ -34,7 +34,7 @@ var (
 func Test_Frame_Read_Size(t *testing.T) {
 	var out bytes.Buffer
 	var fw fixedwriter.FixedWriter
-	err := writeMessage(&out, opcode.Text, nil, true, &fw)
+	err := writeMessageOld(&out, opcode.Text, nil, true, &fw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 
 	var w bytes.Buffer
 	var fw fixedwriter.FixedWriter
-	if err := WriteFrame(&w, f.FrameHeader, f.Payload, &fw); err != nil {
+	if err := WriteFrameOld(&w, f.FrameHeader, f.Payload, &fw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -118,7 +118,7 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	var head [14]byte
 	var have int
 	var err error
-	if have, err = writeHeader(head[:], h); err != nil {
+	if have, err = writeHeaderOld(head[:], h); err != nil {
 		t.Fatal(err)
 	}
 

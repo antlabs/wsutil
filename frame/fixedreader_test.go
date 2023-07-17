@@ -36,7 +36,7 @@ func Test_Reader_Small(t *testing.T) {
 
 	tmp := append([]byte(nil), testTextMessage64kb...)
 	var fw fixedwriter.FixedWriter
-	err := writeMessage(&out, opcode.Text, tmp, true, &fw)
+	err := writeMessageOld(&out, opcode.Text, tmp, true, &fw)
 	// err := writeMessage(&out, opcode.Text, tmp, true, &head, &fw)
 	// hexString := hex.EncodeToString(out.Bytes())
 	// // 在每两个字符之间插入空格
@@ -73,12 +73,12 @@ func Test_Reader_WriteMulti_ReadOne(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true, &fw)
+			err := writeMessageOld(&out, opcode.Text, need, true, &fw)
 			// err := writeMessage(&out, opcode.Text, need, true, &head, &fw)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = writeMessage(&out, opcode.Text, need, true, &fw)
+			err = writeMessageOld(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -130,7 +130,7 @@ func Test_Reader_WriteOne_ReadMulti(t *testing.T) {
 			got = append(got, byte(j))
 		}
 
-		err := writeMessage(&out, opcode.Text, need, true, &fw)
+		err := writeMessageOld(&out, opcode.Text, need, true, &fw)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -186,12 +186,12 @@ func Test_Reader_WriteMulti_ReadOne_64512(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true, &fw)
+			err := writeMessageOld(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
 			}
-			err = writeMessage(&out, opcode.Text, need, true, &fw)
+			err = writeMessageOld(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
@@ -243,12 +243,12 @@ func Test_Reader_WriteMulti_ReadOne_65536(t *testing.T) {
 		}
 
 		for j := 0; j < 1; j++ {
-			err := writeMessage(&out, opcode.Text, need, true, &fw)
+			err := writeMessageOld(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
 			}
-			err = writeMessage(&out, opcode.Text, need, true, &fw)
+			err = writeMessageOld(&out, opcode.Text, need, true, &fw)
 			if err != nil {
 				t.Fatalf("bad test index:%d\n", i)
 				return
