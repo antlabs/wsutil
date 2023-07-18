@@ -1,7 +1,6 @@
 package frame
 
 import (
-	"encoding/binary"
 	"io"
 
 	"github.com/antlabs/wsutil/enum"
@@ -29,8 +28,7 @@ func ReadFrameFromReader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, 
 	f.Payload = *buf
 	f.FrameHeader = h
 	if h.Mask {
-		key := binary.LittleEndian.Uint32(h.MaskValue[:])
-		mask.Mask(f.Payload, key)
+		mask.Mask(f.Payload, h.MaskKey)
 	}
 
 	return f, nil

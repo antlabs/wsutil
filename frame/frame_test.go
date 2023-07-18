@@ -34,7 +34,7 @@ var (
 func Test_Frame_Read_Size(t *testing.T) {
 	var out bytes.Buffer
 	var fw fixedwriter.FixedWriter
-	err := writeMessageOld(&out, opcode.Text, nil, true, &fw)
+	err := writeMessageInner(&out, opcode.Text, nil, true, &fw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,12 +97,13 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 
 	var w bytes.Buffer
 	var fw fixedwriter.FixedWriter
-	if err := WriteFrameOld(&w, f.FrameHeader, f.Payload, &fw); err != nil {
+	fmt.Printf("fin: %v, rsv1: %v, rsv2: %v, rsv3: %v, opcode: %v, payloadLen: %v, mask: %v, maskKey: %v\n", f.GetFin(), f.GetRsv1(), f.GetRsv2(), f.GetRsv3(), f.Opcode, f.PayloadLen, f.Mask, f.MaskKey)
+	if err := WriteFrame(&fw, &w, f.Payload, f.GetRsv1(), f.Mask, opcode.Text, f.MaskKey); err != nil {
 		t.Fatal(err)
 	}
 
 	if !bytes.Equal(w.Bytes(), haveMaskData) {
-		t.Fatalf("not equal")
+		t.Fatalf("not equal:%v %v\n", w.Bytes(), haveMaskData)
 	}
 }
 
@@ -113,12 +114,11 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	var h FrameHeader
 	h.PayloadLen = int64(5)
 	h.Opcode = 1
-	h.Fin = true
 
 	var head [14]byte
 	var have int
 	var err error
-	if have, err = writeHeaderOld(head[:], h); err != nil {
+	if have, err = writeHeader(head[:], true, false, false, false, opcode.Text, 5 /*hello 的长度*/, false, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -129,7 +129,7 @@ func Test_Frame_Write_NoMask(t *testing.T) {
 	}
 
 	if !bytes.Equal(w.Bytes(), noMaskData) {
-		t.Fatalf("not equal:%v, %v\n", w.Bytes(), noMaskData)
+		t.Fatalf("not equal:%v [%b], %v [%b]\n", w.Bytes(), w.Bytes()[0], noMaskData, noMaskData[0])
 	}
 }
 

@@ -17,17 +17,6 @@ func (w *WriteNull) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func Benchmark_Write_Header(b *testing.B) {
-	var head [14]byte
-	for i := 0; i < b.N; i++ {
-		var f Frame
-		f.Fin = true
-		f.Opcode = opcode.Binary
-		f.PayloadLen = 1024
-		writeHeaderOld(head[:], f.FrameHeader)
-	}
-}
-
 func Benchmark_WriteFrame(b *testing.B) {
 	var buf bytes.Buffer
 	payload := make([]byte, 1024)
@@ -43,26 +32,6 @@ func Benchmark_WriteFrame(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		//
 		WriteFrame(&ws, &w, payload, false, false, opcode.Binary, 0)
-		buf.Reset()
-	}
-}
-
-func Benchmark_WriteFrameOld(b *testing.B) {
-	var buf bytes.Buffer
-	payload := make([]byte, 1024)
-	for i := range payload {
-		payload[i] = 1
-	}
-
-	buf.Write(payload)
-	b.ResetTimer()
-	var ws fixedwriter.FixedWriter
-	var w WriteNull
-
-	var f Frame
-	for i := 0; i < b.N; i++ {
-		//
-		WriteFrameOld(&w, f.FrameHeader, payload, &ws)
 		buf.Reset()
 	}
 }

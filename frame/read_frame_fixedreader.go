@@ -1,7 +1,6 @@
 package frame
 
 import (
-	"encoding/binary"
 	"io"
 
 	"github.com/antlabs/wsutil/bytespool"
@@ -76,8 +75,7 @@ func ReadFrameFromWindows(r *fixedreader.FixedReader, headArray *[enum.MaxFrameH
 	f.FrameHeader = h
 	r.R += int(h.PayloadLen)
 	if h.Mask {
-		key := binary.LittleEndian.Uint32(h.MaskValue[:])
-		mask.Mask(f.Payload, key)
+		mask.Mask(f.Payload, h.MaskKey)
 	}
 
 	return f, nil

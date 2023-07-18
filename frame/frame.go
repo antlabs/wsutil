@@ -15,7 +15,6 @@
 package frame
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"io"
 	"math"
@@ -28,19 +27,28 @@ import (
 	"github.com/antlabs/wsutil/opcode"
 )
 
-func newMask(mask []byte) {
-	rand.Read(mask)
-}
-
 type FrameHeader struct {
 	PayloadLen int64
 	Opcode     opcode.Opcode
-	MaskValue  [4]byte
-	Rsv1       bool
-	Rsv2       bool
-	Rsv3       bool
+	MaskKey    uint32
 	Mask       bool
-	Fin        bool
+	head       byte
+}
+
+func (f *FrameHeader) GetFin() bool {
+	return f.head&(1<<7) > 0
+}
+
+func (f *FrameHeader) GetRsv1() bool {
+	return f.head&(1<<6) > 0
+}
+
+func (f *FrameHeader) GetRsv2() bool {
+	return f.head&(1<<5) > 0
+}
+
+func (f *FrameHeader) GetRsv3() bool {
+	return f.head&(1<<4) > 0
 }
 
 type Frame struct {
@@ -61,11 +69,12 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 		return
 	}
 	size = 2
+	h.head = head[0]
 
-	h.Fin = head[0]&(1<<7) > 0
-	h.Rsv1 = head[0]&(1<<6) > 0
-	h.Rsv2 = head[0]&(1<<5) > 0
-	h.Rsv3 = head[0]&(1<<4) > 0
+	// h.Fin = head[0]&(1<<7) > 0
+	// h.Rsv1 = head[0]&(1<<6) > 0
+	// h.Rsv2 = head[0]&(1<<5) > 0
+	// h.Rsv3 = head[0]&(1<<4) > 0
 	h.Opcode = opcode.Opcode(head[0] & 0xF)
 
 	have := 0
@@ -112,7 +121,7 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 	}
 
 	if h.Mask {
-		copy(h.MaskValue[:], head)
+		h.MaskKey = binary.LittleEndian.Uint32(head[:4])
 	}
 
 	return
@@ -178,29 +187,29 @@ func writeHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcod
 	return have, err
 }
 
-func WriteFrame(ws *fixedwriter.FixedWriter, w io.Writer, payload []byte, rsv1 bool, isClient bool, code opcode.Opcode, maskValue uint32) (err error) {
+func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
 	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 
 	var wIndex int
-	ws.Reset(*buf)
+	fw.Reset(*buf)
 
-	if wIndex, err = writeHeader(*buf, true, rsv1, false, false, code, len(payload), isClient, maskValue); err != nil {
+	if wIndex, err = writeHeader(*buf, true, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
 		goto free
 	}
 
-	ws.SetW(wIndex)
-	_, err = ws.Write(payload)
+	fw.SetW(wIndex)
+	_, err = fw.Write(payload)
 	if err != nil {
 		goto free
 	}
-	if isClient {
-		mask.Mask(ws.Bytes()[wIndex:], maskValue)
+	if isMask {
+		mask.Mask(fw.Bytes()[wIndex:], maskValue)
 	}
 
-	_, err = w.Write(ws.Bytes())
+	_, err = w.Write(fw.Bytes())
 
 free:
-	ws.Free()
+	fw.Free()
 	bytespool.PutBytes(buf)
 	return
 }
