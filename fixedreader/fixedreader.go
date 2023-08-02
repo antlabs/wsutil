@@ -28,8 +28,6 @@ type FixedReader struct {
 	rd     io.Reader // reader provided by the client
 	R, W   int       // buf read and write positions
 	err    error
-	// CountMove int
-	// MoveBytes int
 	isInit bool
 }
 
