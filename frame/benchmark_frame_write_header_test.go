@@ -31,7 +31,7 @@ func Benchmark_WriteFrame(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		//
-		WriteFrame(&ws, &w, payload, false, false, opcode.Binary, 0)
+		WriteFrame(&ws, &w, payload, true, false, false, opcode.Binary, 0)
 		buf.Reset()
 	}
 }

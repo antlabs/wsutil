@@ -14,5 +14,5 @@ func writeMessageInner(w io.Writer, op opcode.Opcode, writeBuf []byte, isClient 
 		maskValue = rand.Uint32()
 	}
 
-	return WriteFrame(ws, w, writeBuf, false, isClient, op, maskValue)
+	return WriteFrame(ws, w, writeBuf, true, false, isClient, op, maskValue)
 }

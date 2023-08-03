@@ -187,13 +187,13 @@ func writeHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcod
 	return have, err
 }
 
-func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
+func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, fin bool, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
 	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 
 	var wIndex int
 	fw.Reset(*buf)
 
-	if wIndex, err = writeHeader(*buf, true, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
+	if wIndex, err = writeHeader(*buf, fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
 		goto free
 	}
 

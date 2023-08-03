@@ -98,7 +98,7 @@ func Test_Frame_Mask_Read_And_Write(t *testing.T) {
 	var w bytes.Buffer
 	var fw fixedwriter.FixedWriter
 	fmt.Printf("fin: %v, rsv1: %v, rsv2: %v, rsv3: %v, opcode: %v, payloadLen: %v, mask: %v, maskKey: %v\n", f.GetFin(), f.GetRsv1(), f.GetRsv2(), f.GetRsv3(), f.Opcode, f.PayloadLen, f.Mask, f.MaskKey)
-	if err := WriteFrame(&fw, &w, f.Payload, f.GetRsv1(), f.Mask, opcode.Text, f.MaskKey); err != nil {
+	if err := WriteFrame(&fw, &w, f.Payload, true, f.GetRsv1(), f.Mask, opcode.Text, f.MaskKey); err != nil {
 		t.Fatal(err)
 	}
 
