@@ -176,3 +176,61 @@ func Test_Frame_ReadWrite(t *testing.T) {
 		}
 	})
 }
+
+func Test_Frame_Write(t *testing.T) {
+	t.Run("WriteFrameToBytes.Binary", func(t *testing.T) {
+		var fw fixedwriter.FixedWriter
+		fw.Reset(make([]byte, 1024))
+
+		var out1 bytes.Buffer
+		var out2 bytes.Buffer
+		WriteFrame(&fw, &out1, []byte("12345"), true, false, true, opcode.Binary, 0x12345678)
+		WriteFrameToBytes(&out2, []byte("12345"), true, false, true, opcode.Binary, 0x12345678)
+
+		if !bytes.Equal(out1.Bytes(), out2.Bytes()) {
+			t.Errorf("not equal:WriteFrameResult(%v):WriteFrameToBytes(%v)\n", out1.Bytes(), out2.Bytes())
+		}
+	})
+
+	t.Run("WriteFrameToBytes.Text", func(t *testing.T) {
+		var fw fixedwriter.FixedWriter
+		fw.Reset(make([]byte, 1024))
+
+		var out1 bytes.Buffer
+		var out2 bytes.Buffer
+		WriteFrame(&fw, &out1, []byte("12345"), true, false, true, opcode.Text, 0x12345678)
+		WriteFrameToBytes(&out2, []byte("12345"), true, false, true, opcode.Text, 0x12345678)
+
+		if !bytes.Equal(out1.Bytes(), out2.Bytes()) {
+			t.Errorf("not equal:WriteFrameResult(%v):WriteFrameToBytes(%v)\n", out1.Bytes(), out2.Bytes())
+		}
+	})
+
+	t.Run("WriteFrameToBytes.Binary.NoMask", func(t *testing.T) {
+		var fw fixedwriter.FixedWriter
+		fw.Reset(make([]byte, 1024))
+
+		var out1 bytes.Buffer
+		var out2 bytes.Buffer
+		WriteFrame(&fw, &out1, []byte("12345"), true, false, false, opcode.Binary, 0x12345678)
+		WriteFrameToBytes(&out2, []byte("12345"), true, false, false, opcode.Binary, 0x12345678)
+
+		if !bytes.Equal(out1.Bytes(), out2.Bytes()) {
+			t.Errorf("not equal:WriteFrameResult(%v):WriteFrameToBytes(%v)\n", out1.Bytes(), out2.Bytes())
+		}
+	})
+
+	t.Run("WriteFrameToBytes.Text.NoMask", func(t *testing.T) {
+		var fw fixedwriter.FixedWriter
+		fw.Reset(make([]byte, 1024))
+
+		var out1 bytes.Buffer
+		var out2 bytes.Buffer
+		WriteFrame(&fw, &out1, []byte("12345"), true, false, false, opcode.Text, 0x12345678)
+		WriteFrameToBytes(&out2, []byte("12345"), true, false, false, opcode.Text, 0x12345678)
+
+		if !bytes.Equal(out1.Bytes(), out2.Bytes()) {
+			t.Errorf("not equal:WriteFrameResult(%v):WriteFrameToBytes(%v)\n", out1.Bytes(), out2.Bytes())
+		}
+	})
+}
