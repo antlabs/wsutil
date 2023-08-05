@@ -31,6 +31,10 @@ type Reader2 struct {
 	lastRuneSize int // size of last rune read for UnreadRune; -1 means invalid
 }
 
+func (r *Reader2) ResetBuf(buf []byte) {
+	r.buf = buf
+}
+
 //go:nosplit
 func ClearReader(r *bufio.Reader) {
 	r2 := (*Reader2)(unsafe.Pointer(r))
