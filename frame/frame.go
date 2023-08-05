@@ -15,6 +15,7 @@
 package frame
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 	"math"
@@ -187,6 +188,7 @@ func writeHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcod
 	return have, err
 }
 
+// fw 是个临时空间，先聚合好数据，再写入 w
 func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, fin bool, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
 	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 
@@ -211,5 +213,31 @@ func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, fin bo
 free:
 	fw.Free()
 	bytespool.PutBytes(buf)
+	return
+}
+
+func WriteFrameToBytes(w *bytes.Buffer, payload []byte, fin bool, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
+	var head [enum.MaxFrameHeaderSize]byte
+
+	var wIndex int
+
+	if wIndex, err = writeHeader(head[:], fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
+		return err
+	}
+
+	_, err = w.Write(head[:wIndex])
+	if err != nil {
+		return err
+	}
+
+	wIndex = w.Len()
+	_, err = w.Write(payload)
+	if err != nil {
+		return err
+	}
+	if isMask {
+		mask.Mask(w.Bytes()[wIndex:], maskValue)
+	}
+
 	return
 }
