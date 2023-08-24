@@ -11,7 +11,7 @@ import (
 	"github.com/antlabs/wsutil/fixedreader"
 )
 
-func Benchmark_ReadFrame_1024(b *testing.B) {
+func Benchmark_ReadFrameFromWindows_1024(b *testing.B) {
 	b.ReportAllocs()
 
 	// 阈值
@@ -50,7 +50,7 @@ func Benchmark_ReadFrame_1024(b *testing.B) {
 	}
 }
 
-func Benchmark_ReadFromReader_1024(b *testing.B) {
+func Benchmark_ReadFrameFromReader_1024(b *testing.B) {
 	b.ReportAllocs()
 
 	// 阈值

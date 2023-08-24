@@ -166,6 +166,46 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 	}
 }
 
+func (b *FixedReader) ReadN(n int) (rvn int, err error) {
+	if cap(b.buf) < n {
+		panic("fixedReader.Reader buf size is too small: cap(b.buf) < n")
+	}
+
+	if n == 0 {
+		if b.Buffered() > 0 {
+			return 0, nil
+		}
+		return 0, b.readErr()
+	}
+
+	var n1 int
+	for {
+
+		if b.R == b.W || len(b.buf[b.R:b.W]) < n {
+			if b.err != nil {
+				return 0, b.readErr()
+			}
+			if b.R == b.W {
+				b.R = 0
+				b.W = 0
+			}
+			n1, b.err = b.rd.Read(b.buf[b.W:])
+			if n1 < 0 {
+				panic(errNegativeRead)
+			}
+			if n1 == 0 {
+				return 0, b.readErr()
+			}
+			b.W += n1
+			continue
+		}
+
+		b.R += n1
+
+		return n, nil
+	}
+}
+
 func (b *FixedReader) ResetReader(r io.Reader) {
 	b.rd = r
 	// b.R = 0

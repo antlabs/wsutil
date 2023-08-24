@@ -1,8 +1,6 @@
 package frame
 
 import (
-	"io"
-
 	"github.com/antlabs/wsutil/bytespool"
 	"github.com/antlabs/wsutil/enum"
 	"github.com/antlabs/wsutil/fixedreader"
@@ -52,17 +50,16 @@ func ReadFrameFromWindows(r *fixedreader.FixedReader, headArray *[enum.MaxFrameH
 		r.LeftMove()
 	}
 
-	// 返回可写的缓存区
-	payload := r.WriteCapBytes()
 	// 前面的reset已经保证了，buffer的大小是够的
 	needRead := h.PayloadLen - readUnhandle
 
 	if needRead > 0 {
-		// payload是一块干净可写的空间，使用needRead框下范围
-		payload = payload[:needRead]
 		// 新建一对新的r w指向尾部的内存区域
 		right := r.CloneAvailable()
-		if _, err = io.ReadFull(right, payload); err != nil {
+
+		// 这里不再使用io.ReadFull， 是为了减少一次内存拷贝
+		_, err := right.ReadN(int(needRead))
+		if err != nil {
 			return f, err
 		}
 
