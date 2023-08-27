@@ -32,7 +32,7 @@ jobs:
             dep ensure
         fi
     - name: Build
-      run: go build -v .
+      run: go build -v ./...
 
     - name: Test-386
       run: env GOARCH=386 go test -test.run=Test_Retry_sleep -v 
