@@ -33,23 +33,23 @@ type FrameHeader struct {
 	Opcode     opcode.Opcode
 	MaskKey    uint32
 	Mask       bool
-	head       byte
+	Head       byte
 }
 
 func (f *FrameHeader) GetFin() bool {
-	return f.head&(1<<7) > 0
+	return f.Head&(1<<7) > 0
 }
 
 func (f *FrameHeader) GetRsv1() bool {
-	return f.head&(1<<6) > 0
+	return f.Head&(1<<6) > 0
 }
 
 func (f *FrameHeader) GetRsv2() bool {
-	return f.head&(1<<5) > 0
+	return f.Head&(1<<5) > 0
 }
 
 func (f *FrameHeader) GetRsv3() bool {
-	return f.head&(1<<4) > 0
+	return f.Head&(1<<4) > 0
 }
 
 type Frame struct {
@@ -70,7 +70,7 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 		return
 	}
 	size = 2
-	h.head = head[0]
+	h.Head = head[0]
 
 	// h.Fin = head[0]&(1<<7) > 0
 	// h.Rsv1 = head[0]&(1<<6) > 0
