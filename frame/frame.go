@@ -130,7 +130,7 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 
 // https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
 // (the most significant bit MUST be 0)
-func writeHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcode, payloadLen int, mask bool, maskValue uint32) (have int, err error) {
+func WriteHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcode, payloadLen int, mask bool, maskValue uint32) (have int, err error) {
 	head[0] = 0
 	head[1] = 0
 	head[2] = 0
@@ -195,7 +195,7 @@ func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, fin bo
 	var wIndex int
 	fw.Reset(*buf)
 
-	if wIndex, err = writeHeader(*buf, fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
+	if wIndex, err = WriteHeader(*buf, fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
 		goto free
 	}
 
@@ -221,7 +221,7 @@ func WriteFrameToBytes(w *bytes.Buffer, payload []byte, fin bool, rsv1 bool, isM
 
 	var wIndex int
 
-	if wIndex, err = writeHeader(head[:], fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
+	if wIndex, err = WriteHeader(head[:], fin, rsv1, false, false, code, len(payload), isMask, maskValue); err != nil {
 		return err
 	}
 

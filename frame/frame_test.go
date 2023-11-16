@@ -161,7 +161,7 @@ func Test_Frame_ReadWrite(t *testing.T) {
 		var head [14]byte
 		var have int
 		var err error
-		if have, err = writeHeader(head[:], true, false, false, false, opcode.Text, 5 /*hello 的长度*/, false, 0); err != nil {
+		if have, err = WriteHeader(head[:], true, false, false, false, opcode.Text, 5 /*hello 的长度*/, false, 0); err != nil {
 			t.Fatal(err)
 		}
 
