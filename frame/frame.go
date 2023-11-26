@@ -57,7 +57,7 @@ type Frame struct {
 	Payload []byte
 }
 
-type FrameWithPtr struct {
+type Frame2 struct {
 	FrameHeader
 	Payload *[]byte
 }
