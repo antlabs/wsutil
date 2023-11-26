@@ -57,6 +57,11 @@ type Frame struct {
 	Payload []byte
 }
 
+type FrameWithPtr struct {
+	FrameHeader
+	Payload *[]byte
+}
+
 func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameHeader, size int, err error) {
 	// var headArray [enum.MaxFrameHeaderSize]byte
 	head := (*headArray)[:2]
