@@ -30,10 +30,10 @@ import (
 
 type FrameHeader struct {
 	PayloadLen int64
-	Opcode     opcode.Opcode
 	MaskKey    uint32
 	Mask       bool
 	Head       byte
+	Opcode     opcode.Opcode
 }
 
 func (f *FrameHeader) GetFin() bool {
