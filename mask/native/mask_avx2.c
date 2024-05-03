@@ -1,5 +1,8 @@
 #include <immintrin.h>
+#include <emmintrin.h>
 #include <stdint.h>
+#include <assert.h>
+#include <stddef.h>
 
 #ifndef INLINE
 #ifdef __GNUC__
@@ -58,17 +61,23 @@ static INLINE void mask_avx2_32(uint8_t *payload, size_t size, __m256i key256) {
 
 // 一次处理16字节
 static INLINE void mask_avx2_16(uint8_t *payload, size_t size, uint32_t key) {
-    __m128i data0 = _mm128_loadu_si128(((__m128i *)payload) + 0);
+    __m128i key128 = _mm_set1_epi32(key);
+    __m128i data0 = _mm_loadu_si128(((__m128i *)payload) + 0);
 
-    __m128i result0 = _mm128_xor_si128(data0, key128);
+    __m128i result0 = _mm_xor_si128(data0, key128);
 
-    _mm128_storeu_si128((((__m128i *)payload)+ 0), result0);
+    _mm_storeu_si128((((__m128i *)payload)+ 0), result0);
 }
 
 // 一次处理8字节
-static INLINE void mask_8(uint8_t *payload, size_t size, uint32_t key) {
-    uint64_t key64 = key << 64 | key;
-    *(*uit64_t)(payload) = key64;
+static INLINE void mask_avx2_8(uint8_t *payload, size_t size, uint32_t key) {
+    uint64_t key64 = ((uint64_t)key) << 32| key;
+    *(uint64_t *)(payload) = key64;
+}
+
+// 一次处理4字节
+static INLINE void mask_avx2_4(uint8_t *payload, size_t size, uint32_t key) {
+    *(uint32_t *)(payload) = key;
 }
 
 // 一次处理2字节
@@ -172,8 +181,8 @@ static INLINE void mask_tiny(uint8_t *payload, size_t size, uint32_t key, __m256
         case 17: mask_avx2_16(payload, 16, key);
                  mask_avx2_1(payload + 16, 1, key); break;
         case 33: mask_avx2_32(payload, 32, key256);
-                 mask_avx2_1(payload + 32, 1, key); break
-                 case 49: mask_avx2_32(payload, 32, key256);
+                 mask_avx2_1(payload + 32, 1, key); break;
+        case 49: mask_avx2_32(payload, 32, key256);
                  mask_avx2_16(payload + 32, 16, key);
                  mask_avx2_1(payload + 48, 1, key); break;
         case 65: mask_avx2_64(payload, 64, key256);
@@ -222,7 +231,6 @@ static INLINE void mask_tiny(uint8_t *payload, size_t size, uint32_t key, __m256
 
 void mask_avx2(uint8_t *payload, size_t size, uint32_t key) {
     __m256i key256 = _mm256_set1_epi32(key);
-    size_t i = 0;
 
     // Unroll the loop 8 times
     for (; size >= 256; size -= 32 * 8) {
