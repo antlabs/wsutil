@@ -23,8 +23,7 @@ var errNegativeRead = errors.New("fixedreader: reader returned negative count fr
 // 固定大小的FixedReader, 所有的内存都是提前分配好的
 // 标准库的bufio.Reader不能自定义buf传过去, 导致控制力度会差点
 type FixedReader struct {
-	buf    []byte
-	bufPtr *[]byte
+	buf    *[]byte
 	rd     io.Reader // reader provided by the client
 	R, W   int       // buf read and write positions
 	err    error
@@ -33,8 +32,7 @@ type FixedReader struct {
 
 func (b *FixedReader) Init(r io.Reader, buf *[]byte) {
 	b.rd = r
-	b.buf = *buf
-	b.bufPtr = buf
+	b.buf = buf
 	b.isInit = true
 }
 
@@ -50,9 +48,8 @@ func NewFixedReader(r io.Reader, buf *[]byte) *FixedReader {
 }
 
 func (b *FixedReader) Release() error {
-	if b.bufPtr != nil {
+	if b.buf != nil {
 		b.buf = nil
-		b.bufPtr = nil
 	}
 	return nil
 }
@@ -65,38 +62,37 @@ func (b *FixedReader) readErr() error {
 
 // 将缓存区重置为一个新的buf
 func (b *FixedReader) Reset(buf *[]byte) {
-	if len(*buf) < len(b.buf[b.R:b.W]) {
+	if len(*buf) < len((*b.buf)[b.R:b.W]) {
 		panic("new buf size is too small")
 	}
 
-	copy(*buf, b.buf[b.R:b.W])
+	copy(*buf, (*b.buf)[b.R:b.W])
 	b.W -= b.R
 	b.R = 0
-	b.bufPtr = buf
-	b.buf = *buf
+	b.buf = buf
 }
 
 // 返回底层[]byte的长度
 func (b *FixedReader) Len() int {
-	return len(b.buf)
+	return len(*b.buf)
 }
 
 func (b *FixedReader) BufPtr() *[]byte {
-	return b.bufPtr
+	return b.buf
 }
 
 func (b *FixedReader) Bytes() []byte {
-	return b.buf
+	return *b.buf
 }
 
 // 返回剩余可写的缓存区大小
 func (b *FixedReader) WriteCap() int {
-	return len(b.buf[b.W:])
+	return len((*b.buf)[b.W:])
 }
 
 // 返回剩余可用的缓存区大小
 func (b *FixedReader) Available() int64 {
-	return int64(len(b.buf[b.W:]) + b.R)
+	return int64(len((*b.buf)[b.W:]) + b.R)
 }
 
 // 左移缓存区
@@ -106,18 +102,19 @@ func (b *FixedReader) LeftMove() {
 	}
 	// b.CountMove++
 	// b.MoveBytes += b.W - b.R
-	copy(b.buf, b.buf[b.R:b.W])
+	copy(*b.buf, (*b.buf)[b.R:b.W])
 	b.W -= b.R
 	b.R = 0
 }
 
 // 返回可写的缓存区
 func (b *FixedReader) WriteCapBytes() []byte {
-	return b.buf[b.W:]
+	return (*b.buf)[b.W:]
 }
 
 func (b *FixedReader) CloneAvailable() *FixedReader {
-	return &FixedReader{rd: b.rd, buf: b.buf[b.W:]}
+	buf := (*b.buf)[b.W:]
+	return &FixedReader{rd: b.rd, buf: &buf}
 }
 
 func (b *FixedReader) Buffered() int { return b.W - b.R }
@@ -125,7 +122,7 @@ func (b *FixedReader) Buffered() int { return b.W - b.R }
 // 这和一般read接口中不一样
 // 传入的p 一定会满足这个大小
 func (b *FixedReader) Read(p []byte) (n int, err error) {
-	if cap(b.buf) < cap(p) {
+	if cap(*b.buf) < cap(p) {
 		panic("fixedReader.Reader buf size is too small: cap(b.buf) < cap(p)")
 	}
 
@@ -140,7 +137,7 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 	var n1 int
 	for {
 
-		if b.R == b.W || len(b.buf[b.R:b.W]) < len(p) {
+		if b.R == b.W || len((*b.buf)[b.R:b.W]) < len(p) {
 			if b.err != nil {
 				return 0, b.readErr()
 			}
@@ -148,7 +145,7 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 				b.R = 0
 				b.W = 0
 			}
-			n1, b.err = b.rd.Read(b.buf[b.W:])
+			n1, b.err = b.rd.Read((*b.buf)[b.W:])
 			if n1 < 0 {
 				panic(errNegativeRead)
 			}
@@ -159,7 +156,7 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 			continue
 		}
 
-		n1 = copy(p, b.buf[b.R:b.W])
+		n1 = copy(p, (*b.buf)[b.R:b.W])
 		b.R += n1
 
 		return n, nil
@@ -167,7 +164,7 @@ func (b *FixedReader) Read(p []byte) (n int, err error) {
 }
 
 func (b *FixedReader) ReadN(n int) (rvn int, err error) {
-	if cap(b.buf) < n {
+	if cap(*b.buf) < n {
 		panic("fixedReader.Reader buf size is too small: cap(b.buf) < n")
 	}
 
@@ -181,7 +178,7 @@ func (b *FixedReader) ReadN(n int) (rvn int, err error) {
 	var n1 int
 	for {
 
-		if b.R == b.W || len(b.buf[b.R:b.W]) < n {
+		if b.R == b.W || len((*b.buf)[b.R:b.W]) < n {
 			if b.err != nil {
 				return 0, b.readErr()
 			}
@@ -189,7 +186,7 @@ func (b *FixedReader) ReadN(n int) (rvn int, err error) {
 				b.R = 0
 				b.W = 0
 			}
-			n1, b.err = b.rd.Read(b.buf[b.W:])
+			n1, b.err = b.rd.Read((*b.buf)[b.W:])
 			if n1 < 0 {
 				panic(errNegativeRead)
 			}
@@ -208,6 +205,4 @@ func (b *FixedReader) ReadN(n int) (rvn int, err error) {
 
 func (b *FixedReader) ResetReader(r io.Reader) {
 	b.rd = r
-	// b.R = 0
-	// b.W = 0
 }
