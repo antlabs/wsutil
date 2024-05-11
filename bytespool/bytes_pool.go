@@ -20,6 +20,14 @@ import (
 	"github.com/antlabs/wsutil/enum"
 )
 
+// 生成的大小分别是
+// 1 * 1024 + 14 = 1038
+// 2 * 1024 + 14 = 2062
+// 3 * 1024 + 14 = 3086
+// 4 * 1024 + 14 = 4110
+// 5 * 1024 + 14 = 5134
+// 6 * 1024 + 14 = 6158
+// 7 * 1024 + 14 = 7182
 func init() {
 	for i := 1; i <= maxIndex; i++ {
 		j := i
@@ -52,7 +60,9 @@ func selectIndex(n int) int {
 
 func GetBytes(n int) (rv *[]byte) {
 	if n <= enum.MaxFrameHeaderSize {
-		return pools[0].Get().(*[]byte)
+		rv = pools[0].Get().(*[]byte)
+		*rv = (*rv)[:cap(*rv)]
+		return rv
 	}
 
 	index := selectIndex(n - enum.MaxFrameHeaderSize - 1)
@@ -61,7 +71,9 @@ func GetBytes(n int) (rv *[]byte) {
 		return &rv
 	}
 
-	return pools[index].Get().(*[]byte)
+	rv = pools[index].Get().(*[]byte)
+	*rv = (*rv)[:cap(*rv)]
+	return rv
 }
 
 func PutBytes(bytes *[]byte) {

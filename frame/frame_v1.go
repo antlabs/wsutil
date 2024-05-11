@@ -1,4 +1,4 @@
-// Copyright 2021-2023 antlabs. All rights reserved.
+// Copyright 2021-2024 antlabs. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,11 +55,6 @@ func (f *FrameHeader) GetRsv3() bool {
 type Frame struct {
 	FrameHeader
 	Payload []byte
-}
-
-type Frame2 struct {
-	FrameHeader
-	Payload *[]byte
 }
 
 func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameHeader, size int, err error) {
@@ -196,7 +191,6 @@ func WriteHeader(head []byte, fin bool, rsv1, rsv2, rsv3 bool, code opcode.Opcod
 // fw 是个临时空间，先聚合好数据，再写入 w
 func WriteFrame(fw *fixedwriter.FixedWriter, w io.Writer, payload []byte, fin bool, rsv1 bool, isMask bool, code opcode.Opcode, maskValue uint32) (err error) {
 	buf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
-
 	var wIndex int
 	fw.Reset(*buf)
 

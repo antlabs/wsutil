@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package frame
 
 import (
@@ -21,7 +20,7 @@ import (
 	"github.com/antlabs/wsutil/mask"
 )
 
-func ReadFrameFromReader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame, err error) {
+func ReadFrameFromReaderV2(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame2, err error) {
 	h, _, err := ReadHeader(r, headArray)
 	if err != nil {
 		return f, err
@@ -39,10 +38,10 @@ func ReadFrameFromReader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, 
 	if n1 != int(h.PayloadLen) {
 		return f, io.ErrUnexpectedEOF
 	}
-	f.Payload = *buf
+	f.Payload = buf
 	f.FrameHeader = h
 	if h.Mask {
-		mask.Mask(f.Payload, h.MaskKey)
+		mask.Mask(*f.Payload, h.MaskKey)
 	}
 
 	return f, nil
