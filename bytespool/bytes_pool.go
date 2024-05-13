@@ -77,6 +77,9 @@ func GetBytes(n int) (rv *[]byte) {
 }
 
 func PutBytes(bytes *[]byte) {
+	if cap(*bytes) == 0 {
+		return
+	}
 	if cap(*bytes) < enum.MaxFrameHeaderSize {
 		panic("putBytes: bytes is too small")
 	}

@@ -33,7 +33,7 @@ func decompressNoContextTakeoverInner(r io.Reader) io.ReadCloser {
 }
 
 // 无上下文-解压缩
-func decompressNoContextTakeover(payload []byte) (*[]byte, error) {
+func DecompressNoContextTakeover(payload []byte) (*[]byte, error) {
 	pr := bytes.NewReader(payload)
 	r := decompressNoContextTakeoverInner(pr)
 

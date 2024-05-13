@@ -23,7 +23,7 @@ import (
 	"github.com/klauspost/compress/flate"
 )
 
-type EnCompressContextTakeover struct {
+type CompressContextTakeover struct {
 	dict historyDict
 	w    *flate.Writer
 }
@@ -38,18 +38,18 @@ func (w *wrapBuffer) Close() error {
 
 var enTail = []byte{0, 0, 0xff, 0xff}
 
-func NewEncompressContextTakeover(bit uint8) (en *EnCompressContextTakeover, err error) {
+func NewCompressContextTakeover(bit uint8) (en *CompressContextTakeover, err error) {
 	size := 1 << bit
 	w, err := flate.NewWriterWindow(nil, size)
 	if err != nil {
 		return nil, err
 	}
-	en = &EnCompressContextTakeover{w: w}
+	en = &CompressContextTakeover{w: w}
 	en.dict.InitHistoryDict(size)
 	return en, nil
 }
 
-func (e *EnCompressContextTakeover) Compress(payload []byte) (encodePayload *[]byte, err error) {
+func (e *CompressContextTakeover) Compress(payload []byte) (encodePayload *[]byte, err error) {
 
 	encodeBuf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 

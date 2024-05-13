@@ -30,7 +30,7 @@ func Test_compressNoContextTakeover(t *testing.T) {
 				return
 			}
 
-			gotDecode, err := decompressNoContextTakeover(*gotEncodeBuf)
+			gotDecode, err := DecompressNoContextTakeover(*gotEncodeBuf)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("decompressNoContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return

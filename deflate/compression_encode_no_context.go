@@ -24,7 +24,7 @@ var (
 const (
 	minCompressionLevel     = -2 // flate.HuffmanOnly not defined in Go < 1.6
 	maxCompressionLevel     = flate.BestCompression
-	defaultCompressionLevel = 1
+	DefaultCompressionLevel = 1
 )
 
 var (
@@ -56,7 +56,7 @@ func CompressNoContextTakeover(payload []byte, level int) (encodeBuf *[]byte, er
 	encodeBuf = bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
 
 	out := wrapBuffer{Buffer: bytes.NewBuffer((*encodeBuf)[:0])}
-	w := compressNoContextTakeoverInner(&out, defaultCompressionLevel)
+	w := compressNoContextTakeoverInner(&out, DefaultCompressionLevel)
 	if _, err = io.Copy(w, bytes.NewReader(payload)); err != nil {
 		return nil, err
 	}
