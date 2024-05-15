@@ -33,12 +33,12 @@ func decompressNoContextTakeoverInner(r io.Reader) io.ReadCloser {
 }
 
 // 无上下文-解压缩
-func DecompressNoContextTakeover(payload []byte) (*[]byte, error) {
-	pr := bytes.NewReader(payload)
+func DecompressNoContextTakeover(payload *[]byte) (*[]byte, error) {
+	pr := bytes.NewReader(*payload)
 	r := decompressNoContextTakeoverInner(pr)
 
 	// 从池里面拿buf, 这里的2是经验值，解压缩之后是2倍的大小
-	decodeBuf := bytespool.GetBytes(len(payload) * 2)
+	decodeBuf := bytespool.GetBytes(len(*payload) * 2)
 	// 包装下
 	out := bytes.NewBuffer((*decodeBuf)[:0])
 	// 解压缩
@@ -74,16 +74,16 @@ func NewDecompressContextTakeover(bit uint8) (*DeCompressContextTakeover, error)
 }
 
 // 解压缩
-func (d *DeCompressContextTakeover) Decompress(payload []byte, maxMessage int64) (*[]byte, error) {
+func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64) (*[]byte, error) {
 	// 获取dict
 	dict := d.dict.GetData()
 	// 拿到接口
 	frt := d.ReadCloser.(flate.Resetter)
 	// 重置
 
-	frt.Reset(io.MultiReader(bytes.NewReader(payload), bytes.NewReader(tailBytes)), dict)
+	frt.Reset(io.MultiReader(bytes.NewReader(*payload), bytes.NewReader(tailBytes)), dict)
 	// 从池里面拿buf, 这里的2是经验值，解压缩之后是2倍的大小
-	decodeBuf := bytespool.GetBytes(len(payload) * 2)
+	decodeBuf := bytespool.GetBytes(len(*payload) * 2)
 	// 包装下
 	out := bytes.NewBuffer((*decodeBuf)[:0])
 	// 解压缩

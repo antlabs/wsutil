@@ -14,8 +14,8 @@
 package deflate
 
 import (
-	"fmt"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -24,24 +24,41 @@ func Test_needDecompression(t *testing.T) {
 		header http.Header
 	}
 	tests := []struct {
-		name   string
-		args   args
-		want   bool
-		enable bool
+		name string
+		args args
+		want bool
+		got  PermessageDeflateConf
 	}{
-		{name: "test1", args: args{header: http.Header{"Sec-Websocket-Extensions": {"permessage-deflate; server_no_context_takeover; client_no_context_takeover"}}}, want: false, enable: true},
-		{name: "test2", args: args{header: http.Header{"Sec-Websocket-Extensions": {"xx"}}}, want: true, enable: false},
+		{name: "test1", want: false, got: PermessageDeflateConf{
+			Enable:        true,
+			Decompression: true,
+			Compression:   true,
+		}, args: args{header: http.Header{"Sec-Websocket-Extensions": {"permessage-deflate; server_no_context_takeover; client_no_context_takeover"}}}},
+		{name: "test2", want: true, args: args{header: http.Header{"Sec-Websocket-Extensions": {"xx"}}}},
+		{name: "test3", got: PermessageDeflateConf{
+			Enable:                true,
+			Decompression:         true,
+			Compression:           true,
+			ServerContextTakeover: false,
+			ClientContextTakeover: false,
+			ClientMaxWindowBits:   15,
+			ServerMaxWindowBits:   9,
+		}, want: false, args: args{header: http.Header{"Sec-Websocket-Extensions": {"permessage-deflate; client_no_context_takeover; client_max_window_bits; server_no_context_takeover; server_max_window_bits=9"}}}},
 	}
-	for _, tt := range tests {
+	for index, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pd, err := GetConnPermessageDeflate(tt.args.header)
 			if (err != nil) != tt.want {
-				t.Errorf("genConnPermessageDefalte %v\n", err)
+				t.Errorf("index:%d, genConnPermessageDefalte %v\n", index, err)
 				return
 			}
-			fmt.Printf("%#v\n", pd)
-			if pd.Enable != tt.enable {
-				t.Errorf("needDecompression() = %v, want %v", pd, tt.want)
+
+			if err != nil {
+				return
+			}
+
+			if !reflect.DeepEqual(pd, tt.got) {
+				t.Errorf("index:%d, want %#v, got %#v\n", index, tt.got, pd)
 			}
 		})
 	}

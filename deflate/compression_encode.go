@@ -49,13 +49,13 @@ func NewCompressContextTakeover(bit uint8) (en *CompressContextTakeover, err err
 	return en, nil
 }
 
-func (e *CompressContextTakeover) Compress(payload []byte) (encodePayload *[]byte, err error) {
+func (e *CompressContextTakeover) Compress(payload *[]byte) (encodePayload *[]byte, err error) {
 
-	encodeBuf := bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
+	encodeBuf := bytespool.GetBytes(len(*payload) + enum.MaxFrameHeaderSize)
 
 	out := wrapBuffer{Buffer: bytes.NewBuffer((*encodeBuf)[:0])}
 	e.w.ResetDict(out, e.dict.GetData())
-	if _, err = io.Copy(e.w, bytes.NewReader(payload)); err != nil {
+	if _, err = io.Copy(e.w, bytes.NewReader(*payload)); err != nil {
 		return nil, err
 	}
 

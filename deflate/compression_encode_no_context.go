@@ -6,7 +6,6 @@ package deflate
 
 import (
 	"bytes"
-	"compress/flate"
 	"errors"
 	"io"
 	"sync"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/antlabs/wsutil/bytespool"
 	"github.com/antlabs/wsutil/enum"
+	"github.com/klauspost/compress/flate"
 )
 
 var (
@@ -51,13 +51,13 @@ func compressNoContextTakeoverInner(w io.WriteCloser, level int) io.WriteCloser 
 	return &flateWriteWrapper{fw: fw, p: p}
 }
 
-func CompressNoContextTakeover(payload []byte, level int) (encodeBuf *[]byte, err error) {
+func CompressNoContextTakeover(payload *[]byte, level int) (encodeBuf *[]byte, err error) {
 
-	encodeBuf = bytespool.GetBytes(len(payload) + enum.MaxFrameHeaderSize)
+	encodeBuf = bytespool.GetBytes(len(*payload) + enum.MaxFrameHeaderSize)
 
 	out := wrapBuffer{Buffer: bytes.NewBuffer((*encodeBuf)[:0])}
 	w := compressNoContextTakeoverInner(&out, DefaultCompressionLevel)
-	if _, err = io.Copy(w, bytes.NewReader(payload)); err != nil {
+	if _, err = io.Copy(w, bytes.NewReader(*payload)); err != nil {
 		return nil, err
 	}
 

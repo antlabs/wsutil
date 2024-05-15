@@ -65,6 +65,9 @@ func parseMaxWindowBits(val string) (uint8, error) {
 func parsePermessageDeflate(header http.Header) (pmd PermessageDeflateConf, err error) {
 	params := parseExtensions(header)
 	pd := false
+	clientNoContext := false
+	serverNoContext := false
+
 	for _, param := range params {
 		switch param.key {
 		case "permessage-deflate":
@@ -74,23 +77,31 @@ func parsePermessageDeflate(header http.Header) (pmd PermessageDeflateConf, err 
 				pmd.ServerContextTakeover = false
 				pmd.Enable = true
 				pmd.Decompression = true
+				serverNoContext = true
 			}
 		case "client_no_context_takeover":
 			if pd {
 				pmd.ClientContextTakeover = false
 				pmd.Enable = true
 				pmd.Compression = true
+				clientNoContext = true
 			}
 		case "client_max_window_bits":
 			if pmd.ClientMaxWindowBits, err = parseMaxWindowBits(param.val); err != nil {
 				return
 			}
-			pmd.ClientContextTakeover = true
+
+			if !clientNoContext {
+				pmd.ClientContextTakeover = true
+			}
 		case "server_max_window_bits":
 			if pmd.ServerMaxWindowBits, err = parseMaxWindowBits(param.val); err != nil {
 				return
 			}
-			pmd.ServerContextTakeover = true
+
+			if !serverNoContext {
+				pmd.ServerContextTakeover = true
+			}
 		default:
 			err = http.ErrNotSupported
 			return
