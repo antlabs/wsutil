@@ -44,13 +44,13 @@ func TestEnCompressContextTakeover_Compress(t *testing.T) {
 				t.Errorf("NewCompressContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			gotEncodePayload, err := e.Compress(tt.args.payload)
+			gotEncodePayload, err := e.Compress(&tt.args.payload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CompressContextTakeover.Compress() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			decodePayload, err := DecompressNoContextTakeover(*gotEncodePayload)
+			decodePayload, err := DecompressNoContextTakeover(gotEncodePayload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CompressContextTakeover.Compress() error = %v, wantErr %v", err, tt.wantErr)
 				return

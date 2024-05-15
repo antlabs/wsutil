@@ -24,13 +24,13 @@ func Test_compressNoContextTakeover(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotEncodeBuf, err := CompressNoContextTakeover(tt.args.payload, tt.args.level)
+			gotEncodeBuf, err := CompressNoContextTakeover(&tt.args.payload, tt.args.level)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("compressNoContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			gotDecode, err := DecompressNoContextTakeover(*gotEncodeBuf)
+			gotDecode, err := DecompressNoContextTakeover(gotEncodeBuf)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("decompressNoContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return
