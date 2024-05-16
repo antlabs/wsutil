@@ -76,15 +76,27 @@ func GetBytes(n int) (rv *[]byte) {
 	return rv
 }
 
+// PutBytes可以接受 不是GetBytes分配出来的内存块
+// 如果不是GetBytes分配出来内存块就移到向下一级移去，每一个索引的数据都是>= page * i + enum.MaxFrameHeaderSize，这样保证取出来的数据是够用的，不会太小。
 func PutBytes(bytes *[]byte) {
 	if cap(*bytes) == 0 {
+		return
+	}
+	if cap(*bytes) < page+enum.MaxFrameHeaderSize {
 		return
 	}
 	if cap(*bytes) < enum.MaxFrameHeaderSize {
 		panic("putBytes: bytes is too small")
 	}
+
 	newLen := cap(*bytes) - enum.MaxFrameHeaderSize - 1
 	index := selectIndex(newLen)
+	if (cap(*bytes)-enum.MaxFrameHeaderSize)%page != 0 {
+		index--
+		if index < 0 {
+			return
+		}
+	}
 	if index >= len(pools) {
 		return
 	}

@@ -44,6 +44,15 @@ func Test_needDecompression(t *testing.T) {
 			ClientMaxWindowBits:   15,
 			ServerMaxWindowBits:   9,
 		}, want: false, args: args{header: http.Header{"Sec-Websocket-Extensions": {"permessage-deflate; client_no_context_takeover; client_max_window_bits; server_no_context_takeover; server_max_window_bits=9"}}}},
+		{name: "test4", got: PermessageDeflateConf{
+			Enable:                true,
+			Decompression:         true,
+			Compression:           true,
+			ServerContextTakeover: false,
+			ClientContextTakeover: false,
+			ClientMaxWindowBits:   15,
+			ServerMaxWindowBits:   9,
+		}, want: false, args: args{header: http.Header{"Sec-Websocket-Extensions": {"permessage-deflate; client_no_context_takeover; client_max_window_bits; server_no_context_takeover; server_max_window_bits=9, permessage-deflate; client_no_context_takeover; client_max_window_bits; server_no_context_takeover, permessage-deflate; client_no_context_takeover; client_max_window_bits"}}}},
 	}
 	for index, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
