@@ -25,6 +25,7 @@ func TestDecompressNoContextTakeover(t *testing.T) {
 	type args struct {
 		payload []byte
 	}
+
 	tests := []struct {
 		name     string
 		args     args

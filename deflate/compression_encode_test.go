@@ -50,7 +50,8 @@ func TestEnCompressContextTakeover_Compress(t *testing.T) {
 				return
 			}
 
-			decodePayload, err := DecompressNoContextTakeover(gotEncodePayload)
+			var decCtx *DeCompressContextTakeover
+			decodePayload, err := decCtx.Decompress(gotEncodePayload, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CompressContextTakeover.Compress() error = %v, wantErr %v", err, tt.wantErr)
 				return

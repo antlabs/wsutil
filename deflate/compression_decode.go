@@ -26,37 +26,6 @@ import (
 
 var tailBytes = []byte{0x00, 0x00, 0xff, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff}
 
-// 无上下文-解压缩
-func newDecompressNoContextTakeover(r io.Reader) io.ReadCloser {
-	fr, _ := flateReaderPool.Get().(io.ReadCloser)
-	fr.(flate.Resetter).Reset(io.MultiReader(r, bytes.NewReader(tailBytes)), nil)
-	return &flateReadWrapper{fr}
-}
-
-// 无上下文-解压缩
-func DecompressNoContextTakeover(payload *[]byte) (*[]byte, error) {
-	pr := bytes.NewReader(*payload)
-	r := newDecompressNoContextTakeover(pr)
-
-	// 从池里面拿buf, 这里的2是经验值，解压缩之后是2倍的大小
-	decodeBuf := bytespool.GetBytes(len(*payload)*2 + enum.MaxFrameHeaderSize)
-	// 包装下
-	out := bytes.NewBuffer((*decodeBuf)[:0])
-	// 解压缩
-	if _, err := io.Copy(out, r); err != nil {
-		return nil, err
-	}
-	// 拿到解压缩之后的buf
-	outBytes := out.Bytes()
-	// 如果解压缩之后的buf和从池里面拿的buf不一样，就把从池里面拿的buf放回去
-	if unsafe.SliceData(*decodeBuf) != unsafe.SliceData(outBytes) {
-		bytespool.PutBytes(decodeBuf)
-	}
-
-	r.Close()
-	return &outBytes, nil
-}
-
 // 上下文-解压缩
 type DeCompressContextTakeover struct {
 	dict historyDict
@@ -71,9 +40,14 @@ func NewDecompressContextTakeover(bit uint8) (*DeCompressContextTakeover, error)
 }
 
 // 解压缩
+// d有值时，上下文接管的情况调用
+// d为nil时， 上下文不接管的情况下调用，利用了go，对象为空，调用函数不会panic的特性
 func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64) (outBytes2 *[]byte, err error) {
 	// 获取dict
-	dict := d.dict.GetData()
+	var dict []byte
+	if d != nil {
+		dict = d.dict.GetData()
+	}
 
 	// 拿到解码器
 	rc, _ := flateReaderPool.Get().(io.Reader)
@@ -107,8 +81,11 @@ func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64
 	if unsafe.SliceData(*decodeBuf) != unsafe.SliceData(outBytes) {
 		bytespool.PutBytes(decodeBuf)
 	}
-	// 写入dict
-	d.dict.Write(out.Bytes())
+
+	if d != nil {
+		// 写入dict
+		d.dict.Write(out.Bytes())
+	}
 	// 返回解压缩之后的buf
 	return &outBytes, nil
 }
