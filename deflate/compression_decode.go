@@ -60,32 +60,32 @@ func DecompressNoContextTakeover(payload *[]byte) (*[]byte, error) {
 // 上下文-解压缩
 type DeCompressContextTakeover struct {
 	dict historyDict
-	io.ReadCloser
-	bit uint8
 }
 
 // 初始化一个对象
 func NewDecompressContextTakeover(bit uint8) (*DeCompressContextTakeover, error) {
 	size := 1 << uint(bit)
-	r := flate.NewReader(nil)
-	de := &DeCompressContextTakeover{
-		ReadCloser: r,
-		bit:        bit,
-	}
+	de := &DeCompressContextTakeover{}
 	de.dict.InitHistoryDict(size)
 	return de, nil
 }
 
 // 解压缩
-func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64) (*[]byte, error) {
+func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64) (outBytes2 *[]byte, err error) {
 	// 获取dict
 	dict := d.dict.GetData()
-	// 拿到接口
-	frt := d.ReadCloser.(flate.Resetter)
-	// 重置
 
-	// frt, _ := flateReaderPool.Get().(flate.Resetter)
-	// defer flateReaderPool.Put(frt)
+	// 拿到解码器
+	rc, _ := flateReaderPool.Get().(io.Reader)
+	frt, ok := rc.(flate.Resetter)
+	if !ok {
+		panic("not found flate.Resetter")
+	}
+	defer func() {
+		if err == nil {
+			flateReaderPool.Put(frt)
+		}
+	}()
 
 	frt.Reset(io.MultiReader(bytes.NewReader(*payload), bytes.NewReader(tailBytes)), dict)
 	// 从池里面拿buf, 这里的2是经验值，解压缩之后是2倍的大小
@@ -95,9 +95,8 @@ func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64
 	// 解压缩
 
 	// 限制大小
-	var rc io.Reader = d.ReadCloser
 	if maxMessage > 0 {
-		rc = limitreader.NewLimitReader(d.ReadCloser, maxMessage)
+		rc = limitreader.NewLimitReader(rc, maxMessage)
 	}
 	if _, err := io.Copy(out, rc); err != nil {
 		return nil, err
@@ -112,40 +111,4 @@ func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64
 	d.dict.Write(out.Bytes())
 	// 返回解压缩之后的buf
 	return &outBytes, nil
-
-}
-
-func (d *DeCompressContextTakeover) Decompress2(payload *[]byte, maxMessage int64) (*[]byte, error) {
-	// 获取dict
-	dict := d.dict.GetData()
-	// 拿到接口
-	frt := d.ReadCloser.(flate.Resetter)
-	// 重置
-
-	frt.Reset(io.MultiReader(bytes.NewReader(*payload), bytes.NewReader(tailBytes)), dict)
-	// 从池里面拿buf, 这里的2是经验值，解压缩之后是2倍的大小
-	decodeBuf := bytespool.GetBytes(len(*payload)*2 + enum.MaxFrameHeaderSize)
-	// 包装下
-	out := bytes.NewBuffer((*decodeBuf)[:0])
-	// 解压缩
-
-	// 限制大小
-	var rc io.Reader = d.ReadCloser
-	if maxMessage > 0 {
-		rc = limitreader.NewLimitReader(d.ReadCloser, maxMessage)
-	}
-	if _, err := io.Copy(out, rc); err != nil {
-		return nil, err
-	}
-	// 拿到解压缩之后的buf
-	outBytes := out.Bytes()
-	// 如果解压缩之后的buf和从池里面拿的buf不一样，就把从池里面拿的buf放回去
-	if unsafe.SliceData(*decodeBuf) != unsafe.SliceData(outBytes) {
-		bytespool.PutBytes(decodeBuf)
-	}
-	// 写入dict
-	d.dict.Write(out.Bytes())
-	// 返回解压缩之后的buf
-	return &outBytes, nil
-
 }
