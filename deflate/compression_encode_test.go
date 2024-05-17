@@ -44,7 +44,7 @@ func TestEnCompressContextTakeover_Compress(t *testing.T) {
 				t.Errorf("NewCompressContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			gotEncodePayload, err := e.Compress(&tt.args.payload)
+			gotEncodePayload, err := e.Compress(&tt.args.payload, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CompressContextTakeover.Compress() error = %v, wantErr %v", err, tt.wantErr)
 				return

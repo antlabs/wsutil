@@ -96,7 +96,6 @@ func (e *CompressContextTakeover) Compress(payload *[]byte, bit uint8) (encodePa
 
 	var dict []byte
 	if e != nil {
-		bit = e.bit
 		dict = e.dict.GetData()
 	}
 	w, p := newCompressContextTakeover(nil, DefaultCompressionLevel, bit)
