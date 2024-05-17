@@ -56,8 +56,6 @@ func newCompressContextTakeover(w io.WriteCloser, level int, bit uint8) (*flate.
 		fw, _ = p.Get().(*flate.Writer)
 		if fw == nil {
 			fw, _ = flate.NewWriterWindow(w, 1<<bit)
-		} else {
-			fw.Reset(w)
 		}
 	} else {
 
@@ -65,8 +63,6 @@ func newCompressContextTakeover(w io.WriteCloser, level int, bit uint8) (*flate.
 		fw, _ = p.Get().(*flate.Writer)
 		if fw == nil {
 			fw, _ = flate.NewWriter(w, level)
-		} else {
-			fw.Reset(w)
 		}
 	}
 
@@ -75,7 +71,6 @@ func newCompressContextTakeover(w io.WriteCloser, level int, bit uint8) (*flate.
 
 type CompressContextTakeover struct {
 	dict historyDict
-	bit  uint8
 }
 
 type wrapBuffer struct {
@@ -92,15 +87,13 @@ func NewCompressContextTakeover(bit uint8) (en *CompressContextTakeover, err err
 	size := 1 << bit
 	en = &CompressContextTakeover{}
 	en.dict.InitHistoryDict(size)
-	en.bit = bit
 	return en, nil
 }
 
-func (e *CompressContextTakeover) Compress(payload *[]byte) (encodePayload *[]byte, err error) {
+func (e *CompressContextTakeover) Compress(payload *[]byte, bit uint8) (encodePayload *[]byte, err error) {
 
 	encodeBuf := bytespool.GetBytes(len(*payload) + enum.MaxFrameHeaderSize)
 
-	bit := uint8(0)
 	var dict []byte
 	if e != nil {
 		bit = e.bit
