@@ -53,7 +53,8 @@ func TestDecompressNoContextTakeover(t *testing.T) {
 				tt.args.payload = all
 			}
 			// 压缩下一段数据
-			gotPayload, err := CompressNoContextTakeover(&tt.args.payload, 1, 10)
+			var encode *CompressContextTakeover
+			gotPayload, err := encode.Compress(&tt.args.payload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CompressNoContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -132,7 +133,8 @@ func TestDecompressNoContextTakeover2(t *testing.T) {
 
 			for i := 0; i < tt.loop; i++ {
 				// 压缩下一段数据
-				gotPayload, err := CompressNoContextTakeover(&needData, 2, 10)
+				var encode *CompressContextTakeover
+				gotPayload, err := encode.Compress(&needData)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("CompressNoContextTakeover() error = %v, wantErr %v", err, tt.wantErr)
 					return

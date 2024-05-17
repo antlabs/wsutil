@@ -15,7 +15,9 @@ package deflate
 
 import (
 	"bytes"
+	"errors"
 	"io"
+	"sync"
 	"unsafe"
 
 	"github.com/antlabs/wsutil/bytespool"
@@ -23,9 +25,57 @@ import (
 	"github.com/klauspost/compress/flate"
 )
 
+var (
+	ErrUnexpectedFlateStream = errors.New("internal error, unexpected bytes at end of flate stream")
+	ErrWriteClosed           = errors.New("write close")
+)
+
+const (
+	minCompressionLevel     = -2 // flate.HuffmanOnly not defined in Go < 1.6
+	maxCompressionLevel     = flate.BestCompression
+	DefaultCompressionLevel = 1
+)
+
+var (
+	// bitPoolSize         = 15 - 8 + 1
+	minBit              = 8
+	flateWriterBitPools [15 - 8 + 1]sync.Pool
+	flateWriterPools    [maxCompressionLevel - minCompressionLevel + 1]sync.Pool
+	flateReaderPool     = sync.Pool{New: func() interface{} {
+		return flate.NewReader(nil)
+	}}
+)
+
+func newCompressContextTakeover(w io.WriteCloser, level int, bit uint8) (*flate.Writer, *sync.Pool) {
+	var fw *flate.Writer
+	var p *sync.Pool
+	if bit > 0 {
+
+		p = &flateWriterBitPools[bit-uint8(minBit)]
+
+		fw, _ = p.Get().(*flate.Writer)
+		if fw == nil {
+			fw, _ = flate.NewWriterWindow(w, 1<<bit)
+		} else {
+			fw.Reset(w)
+		}
+	} else {
+
+		p = &flateWriterPools[level-minCompressionLevel]
+		fw, _ = p.Get().(*flate.Writer)
+		if fw == nil {
+			fw, _ = flate.NewWriter(w, level)
+		} else {
+			fw.Reset(w)
+		}
+	}
+
+	return fw, p
+}
+
 type CompressContextTakeover struct {
 	dict historyDict
-	w    *flate.Writer
+	bit  uint8
 }
 
 type wrapBuffer struct {
@@ -40,12 +90,9 @@ var enTail = []byte{0, 0, 0xff, 0xff}
 
 func NewCompressContextTakeover(bit uint8) (en *CompressContextTakeover, err error) {
 	size := 1 << bit
-	w, err := flate.NewWriterWindow(nil, size)
-	if err != nil {
-		return nil, err
-	}
-	en = &CompressContextTakeover{w: w}
+	en = &CompressContextTakeover{}
 	en.dict.InitHistoryDict(size)
+	en.bit = bit
 	return en, nil
 }
 
@@ -53,13 +100,28 @@ func (e *CompressContextTakeover) Compress(payload *[]byte) (encodePayload *[]by
 
 	encodeBuf := bytespool.GetBytes(len(*payload) + enum.MaxFrameHeaderSize)
 
+	bit := uint8(0)
+	var dict []byte
+	if e != nil {
+		bit = e.bit
+		dict = e.dict.GetData()
+	}
+	w, p := newCompressContextTakeover(nil, DefaultCompressionLevel, bit)
+
+	defer func() {
+		// 如果没有出错
+		if err == nil {
+			p.Put(w)
+		}
+	}()
 	out := wrapBuffer{Buffer: bytes.NewBuffer((*encodeBuf)[:0])}
-	e.w.ResetDict(out, e.dict.GetData())
-	if _, err = io.Copy(e.w, bytes.NewReader(*payload)); err != nil {
+
+	w.ResetDict(out, dict)
+	if _, err = io.Copy(w, bytes.NewReader(*payload)); err != nil {
 		return nil, err
 	}
 
-	if err = e.w.Flush(); err != nil {
+	if err = w.Flush(); err != nil {
 		return nil, err
 	}
 

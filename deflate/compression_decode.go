@@ -57,6 +57,7 @@ func (d *DeCompressContextTakeover) Decompress(payload *[]byte, maxMessage int64
 	}
 	defer func() {
 		if err == nil {
+			// 如果没有错误，就把解码器放回池里面
 			flateReaderPool.Put(frt)
 		}
 	}()
