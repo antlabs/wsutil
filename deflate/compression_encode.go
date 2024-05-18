@@ -129,6 +129,9 @@ func (e *CompressContextTakeover) Compress(payload *[]byte, bit uint8) (encodePa
 		bytespool.PutBytes(encodeBuf)
 	}
 
+	if e != nil && payload != nil {
+		e.dict.Write(*payload)
+	}
 	outBuf := out.Bytes()
 	return &outBuf, nil
 }
