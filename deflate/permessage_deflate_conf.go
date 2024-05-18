@@ -16,6 +16,7 @@ package deflate
 import (
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // https://datatracker.ietf.org/doc/html/rfc7692#section-7.1
@@ -113,4 +114,25 @@ func parsePermessageDeflate(header http.Header) (pmd PermessageDeflateConf, err 
 // 是否打开解压缩
 func GetConnPermessageDeflate(header http.Header) (pd PermessageDeflateConf, err error) {
 	return parsePermessageDeflate(header)
+}
+
+func GenSecWebSocketExtensions(pd PermessageDeflateConf) string {
+	ext := make([]string, 1, 5)
+	ext[0] = "permessage-deflate"
+	if !pd.ClientContextTakeover {
+		ext = append(ext, "client_no_context_takeover")
+	}
+
+	if !pd.ServerContextTakeover {
+		ext = append(ext, "server_no_context_takeover")
+	}
+
+	if pd.ClientMaxWindowBits != 0 {
+		ext = append(ext, "client_max_window_bits="+strconv.Itoa(int(pd.ClientMaxWindowBits)))
+	}
+
+	if pd.ServerMaxWindowBits != 0 {
+		ext = append(ext, "server_max_window_bits="+strconv.Itoa(int(pd.ServerMaxWindowBits)))
+	}
+	return strings.Join(ext, "; ")
 }
