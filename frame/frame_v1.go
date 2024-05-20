@@ -90,9 +90,6 @@ func ReadHeader(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte) (h FrameH
 	switch {
 	// 长度
 	case h.PayloadLen >= 0 && h.PayloadLen <= 125:
-		if h.PayloadLen == 0 && !h.Mask {
-			return
-		}
 	case h.PayloadLen == 126:
 		// 2字节长度
 		have += 2
