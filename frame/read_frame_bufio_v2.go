@@ -14,6 +14,7 @@
 package frame
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/antlabs/wsutil/enum"
@@ -23,7 +24,7 @@ import (
 func ReadFrameFromReaderV2(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame2, err error) {
 	h, _, err := ReadHeader(r, headArray)
 	if err != nil {
-		return f, err
+		return f, fmt.Errorf("ReadFrameFromReaderV2:%w", err)
 	}
 
 	if cap(*buf) < int(h.PayloadLen) {
@@ -31,6 +32,37 @@ func ReadFrameFromReaderV2(r io.Reader, headArray *[enum.MaxFrameHeaderSize]byte
 		*buf = make([]byte, h.PayloadLen)
 	}
 	*buf = (*buf)[:h.PayloadLen]
+	n1, err := io.ReadFull(r, *buf)
+	if err != nil {
+		return f, err
+	}
+	if n1 != int(h.PayloadLen) {
+		return f, io.ErrUnexpectedEOF
+	}
+	f.Payload = buf
+	f.FrameHeader = h
+	if h.Mask {
+		mask.Mask(*f.Payload, h.MaskKey)
+	}
+
+	return f, nil
+}
+
+func ReadFrameFromReaderV3(r io.Reader, lr io.Reader, headArray *[enum.MaxFrameHeaderSize]byte, buf *[]byte) (f Frame2, err error) {
+	h, _, err := ReadHeader(r, headArray)
+	if err != nil {
+		return f, fmt.Errorf("ReadFrameFromReaderV2:%w", err)
+	}
+
+	if cap(*buf) < int(h.PayloadLen) {
+		// TODO sync.Pool 处理
+		*buf = make([]byte, h.PayloadLen)
+	}
+	*buf = (*buf)[:h.PayloadLen]
+	if lr != nil {
+		r = lr
+	}
+
 	n1, err := io.ReadFull(r, *buf)
 	if err != nil {
 		return f, err
