@@ -15,3 +15,8 @@ type WsWriter interface {
 	WritePong(data []byte) (err error)
 	WriteTimeout(op opcode.Opcode, data []byte, t time.Duration) (err error)
 }
+
+type WsWriteCloser interface {
+	WsWriter
+	Close() error
+}
