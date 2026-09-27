@@ -1,0 +1,58 @@
+name: NEON (darwin/arm64, opt-in)
+
+# mask 的 NEON 实现受 `darwin && arm64 && wsutil_neon` 构建约束保护,
+# 默认构建不会编译到它。如果没有这个 job, 那份汇编会随着时间腐化而无人察觉。
+#
+# macos-14 是 Apple Silicon (arm64) runner; macos-13 是 Intel, 必须显式指定。
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  neon:
+    runs-on: macos-14
+    name: wsutil_neon on ${{ matrix.go }}
+    strategy:
+      matrix:
+        go: ['1.21', '1.22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: 确认 runner 是 arm64
+        run: |
+          uname -m
+          test "$(go env GOARCH)" = "arm64"
+
+      # 默认构建必须与历史行为一致, 不能因为新增文件而受影响
+      - name: 默认构建 (无 tag)
+        run: go build ./...
+
+      - name: 默认测试 (无 tag)
+        run: go test ./...
+
+      # go vet 能抓出汇编的 ABI 声明错误 (TEXT 的帧大小),
+      # 这类问题运行时测试发现不了。
+      - name: go vet (带 tag)
+        run: go vet -tags wsutil_neon ./mask/
+
+      - name: 构建 (带 tag)
+        run: go build -tags wsutil_neon ./...
+
+      - name: 测试 (带 tag)
+        run: go test -tags wsutil_neon ./mask/ -v
+
+      - name: race 检测 (带 tag)
+        run: go test -tags wsutil_neon -race ./mask/
+
+      # 在 x86 上带 tag 构建, 证明平台约束确实把 NEON 挡在外面
+      - name: 交叉构建 darwin/amd64 (带 tag, 应回退)
+        run: GOOS=darwin GOARCH=amd64 go build -tags wsutil_neon ./...
+
+      - name: 交叉构建 linux/arm64 (带 tag, 应回退)
+        run: GOOS=linux GOARCH=arm64 go build -tags wsutil_neon ./...

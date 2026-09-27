@@ -1,19 +1,34 @@
-// Copyright 2021-2023 antlabs. All rights reserved.
+// Copyright 2021-2024 antlabs. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//go:build !(darwin && arm64 && wsutil_neon)
+
 package mask
 
-// Mask 由各构建变体的 init 函数赋值:
-//   - 默认: antlabs_mask_init_generic.go (maskFast / maskSlow 按端序选择)
-//   - -tags wsutil_neon: antlabs_mask_neon_arm64.go (NEON, 小尺寸回退 maskFast)
-var Mask func(payload []byte, key uint32)
+import "unsafe"
+
+// 默认实现: 未启用 wsutil_neon 时的行为, 与历史版本完全一致。
+// NEON 版本启用时, init 由 antlabs_mask_neon_arm64.go 提供。
+func init() {
+	i := uint32(1)
+	b := *(*bool)(unsafe.Pointer(&i))
+
+	if b {
+		// 小端机器
+		Mask = maskFast
+	} else {
+		// 大端机器
+		Mask = maskSlow
+	}
+}
