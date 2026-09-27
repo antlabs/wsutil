@@ -38,8 +38,21 @@ jobs:
 
       # go vet 能抓出汇编的 ABI 声明错误 (TEXT 的帧大小),
       # 这类问题运行时测试发现不了。
+      #
+      # 过滤掉 antlabs_mask_fast.go 里既有的 unsafe.Pointer 警告:
+      # 那是本次改动之前就存在的, 与 NEON 无关, 不应让 CI 变红。
+      # 其余任何 vet 发现都必须让 CI 失败。
       - name: go vet (带 tag)
-        run: go vet -tags wsutil_neon ./mask/
+        run: |
+          # 一并过滤 go vet 输出的包名标题行(# / # [..]), 否则会被误判为问题
+          out=$(go vet -tags wsutil_neon ./mask/ 2>&1 \
+                | grep -v 'antlabs_mask_fast.go' \
+                | grep -vE '^#( \[)?' || true)
+          if [ -n "$out" ]; then
+            echo "$out"
+            exit 1
+          fi
+          echo "vet 通过"
 
       - name: 构建 (带 tag)
         run: go build -tags wsutil_neon ./...
@@ -49,6 +62,11 @@ jobs:
 
       - name: race 检测 (带 tag)
         run: go test -tags wsutil_neon -race ./mask/
+
+      # 在多种运行时配置下跑(关闭抢占/极端 GC 频率/不同 GOMAXPROCS 等)。
+      # 这些组合靠人工很难记得每次都跑, 所以固化成脚本。
+      - name: 运行时配置矩阵 (chaos_env.sh)
+        run: ./mask/chaos_env.sh
 
       # 在 x86 上带 tag 构建, 证明平台约束确实把 NEON 挡在外面
       - name: 交叉构建 darwin/amd64 (带 tag, 应回退)
