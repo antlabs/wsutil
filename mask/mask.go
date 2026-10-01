@@ -14,6 +14,9 @@
 package mask
 
 // Mask 由各构建变体的 init 函数赋值:
-//   - 默认: antlabs_mask_init_generic.go (maskFast / maskSlow 按端序选择)
-//   - -tags wsutil_neon: antlabs_mask_neon_arm64.go (NEON, 小尺寸回退 maskFast)
+//   - 默认(非 amd64, 或 amd64 带 wsutil_nosimd): antlabs_mask_init_generic.go
+//     (maskFast / maskSlow 按端序选择)
+//   - amd64(默认启用): antlabs_mask_amd64.go (AVX2/SSE2 按尺寸分发, 小尺寸内联标量)
+//   - darwin/arm64 + -tags wsutil_neon: antlabs_mask_neon_arm64.go
+//     (NEON, 小尺寸回退 maskFast)
 var Mask func(payload []byte, key uint32)
